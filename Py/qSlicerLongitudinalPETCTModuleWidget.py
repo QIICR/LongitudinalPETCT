@@ -5,6 +5,8 @@ from LabelStatistics import LabelStatisticsLogic
 from SlicerLongitudinalPETCTModuleViewHelper import SlicerLongitudinalPETCTModuleViewHelper as ViewHelper
 from SlicerLongitudinalPETCTModuleSegmentationHelper import SlicerLongitudinalPETCTModuleSegmentationHelper as SegmentationHelper
 
+from Editor import EditorWidget
+
 import sys as SYS
 
 
