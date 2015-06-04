@@ -322,11 +322,11 @@ vtkMRMLLongitudinalPETCTStudyNode::SetAndObservePETLabelVolumeNodeID(
             this);
     }
 
-  vtkMRMLScalarVolumeNode* petLblNode = NULL;
+  vtkMRMLLabelMapVolumeNode* petLblNode = NULL;
 
   if (this->GetScene() && petLabelVolumeNodeID)
     {
-      petLblNode = vtkMRMLScalarVolumeNode::SafeDownCast(
+      petLblNode = vtkMRMLLabelMapVolumeNode::SafeDownCast(
           this->GetScene()->GetNodeByID(petLabelVolumeNodeID));
     }
 

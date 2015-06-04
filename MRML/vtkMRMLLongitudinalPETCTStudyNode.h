@@ -42,7 +42,7 @@
 
 #include <vtkMRMLVolumeRenderingDisplayNode.h>
 #include <vtkMRMLLinearTransformNode.h>
-#include <vtkMRMLScalarVolumeNode.h>
+#include <vtkMRMLLabelMapVolumeNode.h>
 #include <vtkMRMLAnnotationROINode.h>
 
 
@@ -90,7 +90,7 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSt
   void SetAndObservePETLabelVolumeNodeID(const std::string& petLabelVolumeNodeID);
   vtkGetStringMacro(PETLabelVolumeNodeID);
 
-  vtkGetMacro(PETLabelVolumeNode,vtkMRMLScalarVolumeNode*);
+  vtkGetMacro(PETLabelVolumeNode,vtkMRMLLabelMapVolumeNode*);
 
 
   void SetAndObserveRegistrationTransformNodeID(const char* registrationTransformNodeID);
@@ -147,7 +147,7 @@ protected:
 
   vtkMRMLScalarVolumeNode* PETVolumeNode;
   vtkMRMLScalarVolumeNode* CTVolumeNode;
-  vtkMRMLScalarVolumeNode* PETLabelVolumeNode;
+  vtkMRMLLabelMapVolumeNode* PETLabelVolumeNode;
 
   vtkMRMLLinearTransformNode* RegistrationTransformNode;
   vtkMRMLVolumeRenderingDisplayNode* VolumeRenderingDisplayNode;

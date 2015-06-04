@@ -38,7 +38,7 @@ Version: $Revision: 1.3 $
 
 #include <vtkSmartPointer.h>
 
-#include <vtkMRMLScalarVolumeNode.h>
+#include <vtkMRMLLabelMapVolumeNode.h>
 #include <vtkMRMLModelHierarchyNode.h>
 #include <vtkIntArray.h>
 
@@ -81,7 +81,7 @@ class VTK_SLICER_LONGITUDINALPETCT_MODULE_MRML_EXPORT vtkMRMLLongitudinalPETCTSe
   void SetAndObserveLabelVolumeNodeID(const std::string& labelVolumeNodeID);
   vtkGetStringMacro(LabelVolumeNodeID);
 
-  vtkGetMacro(LabelVolumeNode,vtkMRMLScalarVolumeNode*);
+  vtkGetMacro(LabelVolumeNode,vtkMRMLLabelMapVolumeNode*);
 
   void SetAndObserveModelHierarchyNodeID(const char* modelHierarchyNodeID);
   void SetAndObserveModelHierarchyNodeID(const std::string& modelHierarchyNodeID);
@@ -133,7 +133,7 @@ protected:
   char* LabelVolumeNodeID;
   char* ModelHierarchyNodeID;
 
-  vtkMRMLScalarVolumeNode* LabelVolumeNode;
+  vtkMRMLLabelMapVolumeNode* LabelVolumeNode;
   vtkMRMLModelHierarchyNode* ModelHierarchyNode;
 
   double ROIxyz[3];

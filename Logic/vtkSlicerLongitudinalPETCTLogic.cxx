@@ -20,8 +20,6 @@
 
 
 
-// MRML includes
-
 // VTK includes
 #include <vtkNew.h>
 
@@ -43,7 +41,7 @@
 
 // MRML includes
 #include <vtkMRMLVolumeNode.h>
-#include <vtkMRMLScalarVolumeNode.h>
+#include <vtkMRMLLabelMapVolumeNode.h>
 
 #include <vtkMRMLLinearTransformNode.h>
 #include <vtkMRMLColorTableNode.h>
@@ -79,7 +77,7 @@ bool vtkSlicerLongitudinalPETCTLogic::CenterStudyVolumeNodes(vtkMRMLLongitudinal
 
   vtkMRMLScalarVolumeNode* petVolume = study->GetPETVolumeNode();
   vtkMRMLScalarVolumeNode* ctVolume = study->GetCTVolumeNode();
-  vtkMRMLScalarVolumeNode* petLabelVolume = study->GetPETLabelVolumeNode();
+  vtkMRMLLabelMapVolumeNode* petLabelVolume = study->GetPETLabelVolumeNode();
 
   if (petVolume == NULL || ctVolume == NULL || petLabelVolume == NULL || petVolume->GetImageData() == NULL
       || ctVolume->GetImageData() == NULL || petLabelVolume->GetImageData() == NULL)
