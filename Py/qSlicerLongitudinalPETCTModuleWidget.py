@@ -1,6 +1,7 @@
 from __main__ import vtk, qt, ctk, slicer
 
 from Editor import EditorWidget
+from LabelStatistics import LabelStatisticsLogic
 from SlicerLongitudinalPETCTModuleViewHelper import SlicerLongitudinalPETCTModuleViewHelper as ViewHelper
 from SlicerLongitudinalPETCTModuleSegmentationHelper import SlicerLongitudinalPETCTModuleSegmentationHelper as SegmentationHelper
 
