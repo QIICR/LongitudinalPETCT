@@ -6,6 +6,7 @@ from SlicerLongitudinalPETCTModuleViewHelper import SlicerLongitudinalPETCTModul
 from SlicerLongitudinalPETCTModuleSegmentationHelper import SlicerLongitudinalPETCTModuleSegmentationHelper as SegmentationHelper
 
 from Editor import EditorWidget
+from LabelStatistics import LabelStatisticsLogic
 
 import sys as SYS
 
@@ -919,10 +920,25 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     name = dialog.property("findingName")
     colorid = dialog.property("findingColorID")
+    priorLabelMapID = dialog.property("findingPriorSegmentationID")
 
     if (len(name) > 0) & (colorid != -1):
       finding.SetName(name)
       finding.SetColorID(colorid)
+
+      if (len(priorLabelMapID) > 0):
+        print 'Initializing segmentation from prior'
+        study = self.getActiveStudy()
+        segmentationNode = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
+        # Can init from a prior label map if no segmentation node has been
+        # defined yet, or it has but it doesn't already point to the prior
+        # label map
+        if (segmentationNode == None or
+            segmentationNode.GetLabelVolumeID() == None or
+            (segmentationNode.GetLabelVolumeID() != None and segmentationNode.GetLabelVolumeID() != priorLabelMapID)):
+          finding.SetAttribute("AssociatedNodeID", priorLabelMapID)
+        else:
+          print 'Unable to initialize from prior label map with id',priorLabelMapID,', segmentationNode = ',segmentationNode
 
       self.activeReportNode.AddFindingNodeID(finding.GetID())
       self.reportOverviewWidget.selectFindingRow(self.activeReportNode.GetIndexOfFindingNodeID(finding.GetID()))
@@ -1321,7 +1337,47 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if self.__tempLabelVol == None:
       self.__createTempLabelVolume()
 
+    if finding.GetAttribute("AssociatedNodeID"):
+      # init from the prior segmentation, then unset
+      priorSegmentationID = finding.GetAttribute("AssociatedNodeID")
+      print 'prepareVolumesForSegmentation: Finding has an associated prior: ',priorSegmentationID
+      priorSegmentationNode = slicer.mrmlScene.GetNodeByID(priorSegmentationID)
+      if priorSegmentationNode:
+        # threshold the prior to the finding value
+        findingColor = finding.GetColorID()
+        print 'Threshold the prior to the finding color',findingColor
+        threshold = vtk.vtkImageThreshold()
+        threshold.SetInputData(priorSegmentationNode.GetImageData())
+        threshold.SetReplaceOut(0)
+        threshold.SetReplaceIn(1)
+        threshold.SetInValue(findingColor)
+        # set all non zero values to the finding color
+        scalarRange = [0,0]
+        priorSegmentationNode.GetImageData().GetScalarRange(scalarRange)
+        print '\tprior scalarRange = ',scalarRange
+        threshold.ThresholdBetween(1, scalarRange[1])
+        threshold.Update()
+        threshold.ReleaseDataFlagOn()
+        priorSegmentationNode.SetAndObserveImageData(threshold.GetOutputDataObject(0))
+        # put the prior into the PET label volume so that it will be in
+        # the pipeine for segmentation
+        if (study.GetPETLabelVolumeNode().GetImageData() != None):
+          # check that the geometry matches
+          volumesLogic = slicer.modules.volumes.logic()
+          geometryCheckString = volumesLogic.CheckForLabelVolumeValidity(study.GetPETLabelVolumeNode(), priorSegmentationNode)
+          if geometryCheckString != "":
+            print 'Resampling prior due to geometry mismatch:\n',geometryCheckString
+            resampledSegmentationNode = volumesLogic.ResampleVolumeToReferenceVolume(priorSegmentationNode, study.GetPETLabelVolumeNode())
+            study.GetPETLabelVolumeNode().Copy(resampledSegmentationNode)
+          else:
+            # geometry matches
+            study.GetPETLabelVolumeNode().Copy(priorSegmentationNode)
+        else:
+          # just copy to init it
+          study.GetPETLabelVolumeNode().Copy(priorSegmentationNode)
+
     self.__tempLabelVol.Copy(study.GetPETLabelVolumeNode())
+
     self.__tempLabelVol.SetName("LongitudinalPETCT_CroppedLabelVolume")
     self.__tempLabelVol.SetSaveWithScene(False)
 
@@ -1386,6 +1442,12 @@ class qSlicerLongitudinalPETCTModuleWidget:
     SegmentationHelper.removeSegmentationFromVolume(seg.GetLabelVolumeNode(), finding.GetColorID())
 
     pasted = SegmentationHelper.pasteFromCroppedToMainLabelVolume(self.__tempLabelVol, seg.GetLabelVolumeNode(), finding.GetColorID())
+
+    # if there was a prior, unset it now (if done before this, it can get
+    # over written or cropped out)
+    if finding.GetAttribute("AssociatedNodeID"):
+      finding.RemoveAttribute("AssociatedNodeID")
+
     #set coordinates and extent of roi used for segmentation
     c = [0.,0.,0.]
     r = [0.,0.,0.]
@@ -1445,7 +1507,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if (study == None) | (finding == None):
       return
 
-    stats = LabelStatisticsLogic(study.GetPETVolumeNode(), study.GetPETLabelVolumeNode())
+    stats = LabelStatistics.LabelStatisticsLogic(study.GetPETVolumeNode(), study.GetPETLabelVolumeNode())
 
     if finding.GetColorID() in stats.labelStats["Labels"]:
       idx = stats.labelStats["Labels"].index(finding.GetColorID())

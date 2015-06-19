@@ -47,7 +47,7 @@ class Q_SLICER_LONGITUDINALPETCT_MODULE_WIDGETS_EXPORT qMRMLLongitudinalPETCTFin
 
   Q_PROPERTY(QString findingName READ findingName WRITE setFindingName)
   Q_PROPERTY(int findingColorID READ findingColorID WRITE setFindingColorID)
-
+  Q_PROPERTY(QString findingPriorSegmentationID READ findingPriorSegmentationID WRITE setFindingPriorSegmentationID)
 
 public:
   typedef qMRMLLongitudinalPETCTDialog Superclass;
@@ -56,12 +56,14 @@ public:
 
   QString findingName();
   int findingColorID();
+  QString findingPriorSegmentationID();
 
   void setFindingName(const QString& name);
   void setFindingColorID(int colorID);
+  void setFindingPriorSegmentationID(const QString& labelMapID);
 
 signals:
-  void findingSpecified(const QString& findingName, int colorID);
+  void findingSpecified(const QString& findingName, int colorID, const QString& findingPriorSegmentationID);
 
 public slots:
   virtual void accept();
@@ -69,7 +71,7 @@ public slots:
 
 protected slots:
   void presetButtonClicked(QAbstractButton* button);
-
+  void priorSegmentationChanged(vtkMRMLNode *node);
 
 protected:
   QScopedPointer<qMRMLLongitudinalPETCTFindingSettingsDialogPrivate> d_ptr;

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>374</width>
-    <height>209</height>
+    <height>317</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -295,6 +295,56 @@ Node</string>
     </widget>
    </item>
    <item>
+    <widget class="ctkCollapsibleButton" name="InitializeFromPriorSegmentationCollapsibleButton">
+     <property name="toolTip">
+      <string>Select a segmented volume from the scene, resample and threshold</string>
+     </property>
+     <property name="text">
+      <string>Initialize from Prior Segmentation</string>
+     </property>
+     <property name="collapsed">
+      <bool>true</bool>
+     </property>
+     <property name="contentsFrameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <layout class="QFormLayout" name="formLayout_3">
+      <property name="fieldGrowthPolicy">
+       <enum>QFormLayout::FieldsStayAtSizeHint</enum>
+      </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="PriorSegmentationLabel">
+        <property name="text">
+         <string>Segmentations:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="qMRMLNodeComboBox" name="PriorSegmentationMRMLNodeComboBox">
+        <property name="toolTip">
+         <string>Select a label map volume from the scene. It will be resampled and thresholded if necessary to match the current image geometry. If there are multiple values present, they will be thresholded to the selected finding color.</string>
+        </property>
+        <property name="nodeTypes">
+         <stringlist>
+          <string>vtkMRMLLabelMapVolumeNode</string>
+         </stringlist>
+        </property>
+        <property name="noneEnabled">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="Line" name="line_3">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QDialogButtonBox" name="ButtonBox">
      <property name="standardButtons">
       <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
@@ -306,8 +356,25 @@ Node</string>
  <customwidgets>
   <customwidget>
    <class>qMRMLLabelComboBox</class>
-   <extends>QWidget</extends>
+   <extends>qMRMLWidget</extends>
    <header>qMRMLLabelComboBox.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>qMRMLNodeComboBox</class>
+   <extends>QWidget</extends>
+   <header>qMRMLNodeComboBox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>qMRMLWidget</class>
+   <extends>QWidget</extends>
+   <header>qMRMLWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ctkCollapsibleButton</class>
+   <extends>QWidget</extends>
+   <header>ctkCollapsibleButton.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

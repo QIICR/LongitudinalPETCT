@@ -22,13 +22,15 @@
 #include "qMRMLLongitudinalPETCTFindingSettingsDialog.h"
 #include "ui_qMRMLLongitudinalPETCTFindingSettingsDialog.h"
 
-#include <vtkMRMLLongitudinalPETCTReportNode.h>
-#include <vtkMRMLLongitudinalPETCTFindingNode.h>
-
-
+#include <QAbstractButton>
+#include <QDebug>
 #include <QMessageBox>
 
-#include <QAbstractButton>
+#include <vtkMRMLLongitudinalPETCTFindingNode.h>
+#include <vtkMRMLLongitudinalPETCTReportNode.h>
+#include <vtkMRMLLongitudinalPETCTSegmentationNode.h>
+
+
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_LongitudinalPETCT
@@ -51,13 +53,14 @@ public:
 
   QString findingName;
   int findingColorID;
+  QString findingPriorSegmentationID;
 
 };
 
 // --------------------------------------------------------------------------
 qMRMLLongitudinalPETCTFindingSettingsDialogPrivate::qMRMLLongitudinalPETCTFindingSettingsDialogPrivate(
     qMRMLLongitudinalPETCTFindingSettingsDialog& object) :
-    q_ptr(&object), findingName(""), findingColorID(-1)
+  q_ptr(&object), findingName(""), findingColorID(-1), findingPriorSegmentationID("")
 {
 }
 
@@ -77,6 +80,12 @@ qMRMLLongitudinalPETCTFindingSettingsDialogPrivate::setupUi(
   this->ComboBoxColor->setNoneEnabled(false);
 
   QObject::connect( this->ButtonGroupFindingPresets, SIGNAL(buttonClicked(QAbstractButton*)), q, SLOT(presetButtonClicked(QAbstractButton*)) );
+
+  QObject::connect(this->PriorSegmentationMRMLNodeComboBox,
+                   SIGNAL(currentNodeChanged(vtkMRMLNode*)),
+                   q,
+                   SLOT(priorSegmentationChanged(vtkMRMLNode*)));
+
 }
 
 
@@ -112,10 +121,15 @@ void qMRMLLongitudinalPETCTFindingSettingsDialog::accept()
 
   QString name = d->LineEditName->text();
   int id = d->ComboBoxColor->currentColor();
+  QString priorLabelMapID;
+  if (d->PriorSegmentationMRMLNodeComboBox->currentNode())
+    {
+    priorLabelMapID = d->PriorSegmentationMRMLNodeComboBox->currentNodeID();
+    }
 
   d->findingName = name;
   d->findingColorID = id;
-
+  d->findingPriorSegmentationID = priorLabelMapID;
 
   double c[4];
 
@@ -148,29 +162,49 @@ void qMRMLLongitudinalPETCTFindingSettingsDialog::accept()
           QMessageBox::warning(this, "Finding Settings Warning",
               "The Finding name is already in use, please select another name.");
         }
+      // the prior segmentation is optional
       else
         {
-          emit findingSpecified(name, id);
-          Superclass::accept();
+        emit findingSpecified(name, id, priorLabelMapID);
+        Superclass::accept();
         }
     }
 }
 
+//-----------------------------------------------------------------------------
 void qMRMLLongitudinalPETCTFindingSettingsDialog::updateDialogFromMRML()
 {
   Q_D(qMRMLLongitudinalPETCTFindingSettingsDialog);
   Q_ASSERT(d->ComboBoxColor);
   Q_ASSERT(d->ButtonPresetTumor);
-
+  Q_ASSERT(d->PriorSegmentationMRMLNodeComboBox);
 
   vtkMRMLLongitudinalPETCTReportNode* report = this->reportNode();
 
-  if(report)
+  if (report)
     {
-      d->ComboBoxColor->setMRMLColorNode(const_cast<vtkMRMLColorTableNode*>(report->GetColorTableNode()));
-      d->ButtonPresetTumor->click();
-    }
+    d->ComboBoxColor->setMRMLColorNode(const_cast<vtkMRMLColorTableNode*>(report->GetColorTableNode()));
+    d->ButtonPresetTumor->click();
 
+    bool enablePriorFlag = 0;
+    d->PriorSegmentationMRMLNodeComboBox->setMRMLScene(report->GetScene());
+    if (this->reportNode()->GetScene() &&
+        this->reportNode()->GetScene()->GetNumberOfNodesByClass("vtkMRMLLabelMapVolumeNode") > 0)
+      {
+      int numLabelMaps = this->reportNode()->GetScene()->GetNumberOfNodesByClass("vtkMRMLLabelMapVolumeNode");
+      // right now, there's no way to check that there are label map
+      // volumes in the scene that aren't associated with this study
+      // (the finding node and active label map node are set after
+      // hitting accept, the label map node doesn't have any specific
+      // attributes), so for now if there are more than 2 label
+      // volumes in the scene, activate it
+      if (numLabelMaps > 1)
+        {
+        enablePriorFlag = true;
+        }
+      }
+      d->InitializeFromPriorSegmentationCollapsibleButton->setEnabled(enablePriorFlag);
+    }
 }
 
 
@@ -212,6 +246,51 @@ qMRMLLongitudinalPETCTFindingSettingsDialog::presetButtonClicked(
     }
 }
 
+//-----------------------------------------------------------------------------
+void
+qMRMLLongitudinalPETCTFindingSettingsDialog::priorSegmentationChanged(
+  vtkMRMLNode *node)
+{
+  Q_D(qMRMLLongitudinalPETCTFindingSettingsDialog);
+  Q_ASSERT(d->PriorSegmentationMRMLNodeComboBox);
+
+  if (!node || !node->GetID())
+    {
+    return;
+    }
+
+  const char *activeLabelMapID = NULL;
+
+  // check to be sure that it's not the current segmentation associated with
+  // this finding
+  if (this->reportNode() &&
+      this->reportNode()->GetActiveStudyNode() &&
+      this->reportNode()->GetActiveFindingNode())
+    {
+    vtkSmartPointer<vtkMRMLLongitudinalPETCTSegmentationNode> segmentationNode = NULL;
+    segmentationNode = this->reportNode()->GetActiveFindingNode()->GetSegmentationMappedByStudyNodeID(this->reportNode()->GetActiveStudyNode()->GetID());
+    if (segmentationNode)
+      {
+      activeLabelMapID = segmentationNode->GetLabelVolumeNodeID();
+
+      if (!activeLabelMapID)
+        {
+        return;
+        }
+      if (strcmp(activeLabelMapID, node->GetID()) == 0)
+        {
+        qDebug() << "priorSegmentationChanged: selected node is the same as the active label map id, choose another!";
+        return;
+        }
+      }
+    else
+      {
+      return;
+      }
+    }
+
+  this->setFindingPriorSegmentationID(node->GetID());
+}
 
 //-----------------------------------------------------------------------------
 QString
@@ -230,6 +309,14 @@ qMRMLLongitudinalPETCTFindingSettingsDialog::findingColorID()
 }
 
 //-----------------------------------------------------------------------------
+QString
+qMRMLLongitudinalPETCTFindingSettingsDialog::findingPriorSegmentationID()
+{
+  Q_D(qMRMLLongitudinalPETCTFindingSettingsDialog);
+  return d->findingPriorSegmentationID;
+}
+
+//-----------------------------------------------------------------------------
 void
 qMRMLLongitudinalPETCTFindingSettingsDialog::setFindingName(const QString& name)
 {
@@ -243,4 +330,12 @@ qMRMLLongitudinalPETCTFindingSettingsDialog::setFindingColorID(int id)
 {
   Q_D(qMRMLLongitudinalPETCTFindingSettingsDialog);
   d->findingColorID = id;
+}
+
+//-----------------------------------------------------------------------------
+void
+qMRMLLongitudinalPETCTFindingSettingsDialog::setFindingPriorSegmentationID(const QString& id)
+{
+  Q_D(qMRMLLongitudinalPETCTFindingSettingsDialog);
+  d->findingPriorSegmentationID = id;
 }
