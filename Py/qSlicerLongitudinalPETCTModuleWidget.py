@@ -5,9 +5,6 @@ from LabelStatistics import LabelStatisticsLogic
 from SlicerLongitudinalPETCTModuleViewHelper import SlicerLongitudinalPETCTModuleViewHelper as ViewHelper
 from SlicerLongitudinalPETCTModuleSegmentationHelper import SlicerLongitudinalPETCTModuleSegmentationHelper as SegmentationHelper
 
-from Editor import EditorWidget
-from LabelStatistics import LabelStatisticsLogic
-
 import sys as SYS
 
 
@@ -107,6 +104,30 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.editorWidget.editLabelMapsFrame.setText("Edit Segmentation")
       self.editorWidget.editLabelMapsFrame.connect('contentsCollapsed(bool)', self.onEditorCollapsed)
 
+
+      # add a way to initialize from a prior segmentation
+      if not self.priorSegComboBox:
+        initFromPriorCollapsibleButton = ctk.ctkCollapsibleButton()
+        initFromPriorCollapsibleButton.setText('Initialize from Prior Segmentation')
+        initFromPriorCollapsibleButton.setToolTip('Select a segmented volume from the scene, resample and threshold')
+        initFromPriorCollapsibleButton.setLayout(qt.QHBoxLayout())
+        initFromPriorCollapsibleButton.collapsed = True
+        # add this above the editing
+        self.editorWidget.layout.insertWidget(0, initFromPriorCollapsibleButton)
+
+        self.priorSegComboBox = slicer.qMRMLNodeComboBox()
+        self.priorSegComboBox.setMRMLScene(slicer.mrmlScene)
+        self.priorSegComboBox.nodeTypes = ['vtkMRMLLabelMapVolumeNode']
+        self.priorSegComboBox.setToolTip('Select a label map volume from the scene. It will be resampled and thresholded if necessary to match the current image geometry. If there are multiple values present, they will be thresholded to the selected finding color.')
+        self.priorSegComboBox.noneEnabled = True
+        initFromPriorCollapsibleButton.layout().addWidget(self.priorSegComboBox)
+
+        self.initFromPriorPushButton = qt.QPushButton()
+        self.initFromPriorPushButton.setText('Init from Prior')
+        self.initFromPriorPushButton.setToolTip('The selected label map volume will be resampled and thresholded if necessary to match the current image geometry. If there are multiple values present, they will be thresholded to the selected finding color.')
+        self.initFromPriorPushButton.connect("clicked()", self.onInitFromPriorPushButtonPushed)
+        initFromPriorCollapsibleButton.layout().addWidget(self.initFromPriorPushButton)
+
       editorWidgetParent.show()
 
     return self.editorWidget
@@ -198,6 +219,90 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.moduleSettingsWidget.connect("quantificationModuleChanged(QString)", self.onQuantificationModuleChanged)
 
     return self.moduleSettingsWidget
+
+  def onInitFromPriorPushButtonPushed(self):
+    # get the prior segmentation label map volume from the combo box
+    priorSegmentationNode = self.priorSegComboBox.currentNode()
+    if priorSegmentationNode == None:
+      ViewHelper.Info('No label map selected')
+      return
+    priorSegmentationID = priorSegmentationNode.GetID()
+    if len(priorSegmentationID) == 0:
+      ViewHelper.Info('No id on selected label map')
+      return
+
+    ViewHelper.Info('onInitFromPriorPushButtonPushed: prior node id = ' + priorSegmentationID)
+
+    if self.activeReportNode == None:
+      ViewHelper.Info('No active report!')
+      return
+
+    study = self.getActiveStudy()
+    if study == None:
+      ViewHelper.Info('No active study!')
+      return
+
+    finding = None
+    segmentationNode = None
+    if self.activeReportNode.GetNumberOfFindingNodeIDs() > 0:
+      finding = self.activeReportNode.GetActiveFindingNode()
+    if finding == None:
+      ViewHelper.Info('No finding node found for this report!')
+      return
+
+    segmentationNode = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
+
+    if segmentationNode != None and segmentationNode.GetLabelVolumeNodeID() == priorSegmentationID:
+      ViewHelper.showInformationMessageBox('Initialize from Prior', 'Cannot initialize from the same label node!')
+      return
+
+    ViewHelper.Info('Initializing segmentation from prior')
+
+    # Can init from a prior label map if no segmentation node has been
+    # defined yet, or it has but it doesn't already point to the prior
+    # label map
+    if (segmentationNode == None or
+        segmentationNode.GetLabelVolumeNodeID() == None or
+        (segmentationNode.GetLabelVolumeNodeID() != None and segmentationNode.GetLabelVolumeID() != priorSegmentationID)):
+      # init from the prior segmentation
+      ViewHelper.Info('Finding has an associated prior: ' + priorSegmentationID)
+      # threshold the prior to the finding value
+      findingColor = finding.GetColorID()
+      ViewHelper.Info('Threshold the prior to the finding color ' + str(findingColor))
+      threshold = vtk.vtkImageThreshold()
+      threshold.SetInputData(priorSegmentationNode.GetImageData())
+      threshold.SetReplaceOut(0)
+      threshold.SetReplaceIn(1)
+      threshold.SetInValue(findingColor)
+      # set all non zero values to the finding color
+      scalarRange = [0,0]
+      priorSegmentationNode.GetImageData().GetScalarRange(scalarRange)
+      ViewHelper.Info('\tprior scalarRange = ' + str(scalarRange))
+      threshold.ThresholdBetween(1, scalarRange[1])
+      threshold.Update()
+      threshold.ReleaseDataFlagOn()
+      priorSegmentationNode.SetAndObserveImageData(threshold.GetOutputDataObject(0))
+      # put the prior into the PET label volume so that it will be in
+      # the pipeine for segmentation
+      if (study.GetPETLabelVolumeNode().GetImageData() != None):
+        # check that the geometry matches
+        volumesLogic = slicer.modules.volumes.logic()
+        geometryCheckString = volumesLogic.CheckForLabelVolumeValidity(study.GetPETLabelVolumeNode(), priorSegmentationNode)
+        if geometryCheckString != "":
+          ViewHelper.Info('Resampling prior due to geometry mismatch:\n' + geometryCheckString)
+          resampledSegmentationNode = volumesLogic.ResampleVolumeToReferenceVolume(priorSegmentationNode, study.GetPETLabelVolumeNode())
+          study.GetPETLabelVolumeNode().Copy(resampledSegmentationNode)
+          # clean up
+          slicer.mrmlScene.RemoveNode(resampledSegmentationNode)
+        else:
+          # geometry matches
+          ViewHelper.Info('Geometry matches, copying')
+          study.GetPETLabelVolumeNode().Copy(priorSegmentationNode)
+      else:
+        # just copy to init it
+        ViewHelper.Info('Just copy it')
+        study.GetPETLabelVolumeNode().Copy(priorSegmentationNode)
+      ViewHelper.showInformationMessageBox('Initializing done', 'Finished initializing from prior segmentation')
 
   def __createTempCroppedVolume(self):
     if self.__tempCroppedVol == None:
@@ -318,6 +423,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
     vbox.addWidget(self.findingsCollapsibleButton)
 
     self.editorWidget = None
+    self.priorSegComboBox = None
+    self.initFromPriorPushButton = None
     self.__createEditorWidget()
     self.findingWidget.setEditorWidget(self.editorWidget.parent)
 
@@ -920,25 +1027,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     name = dialog.property("findingName")
     colorid = dialog.property("findingColorID")
-    priorLabelMapID = dialog.property("findingPriorSegmentationID")
 
     if (len(name) > 0) & (colorid != -1):
       finding.SetName(name)
       finding.SetColorID(colorid)
-
-      if (len(priorLabelMapID) > 0):
-        print 'Initializing segmentation from prior'
-        study = self.getActiveStudy()
-        segmentationNode = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
-        # Can init from a prior label map if no segmentation node has been
-        # defined yet, or it has but it doesn't already point to the prior
-        # label map
-        if (segmentationNode == None or
-            segmentationNode.GetLabelVolumeID() == None or
-            (segmentationNode.GetLabelVolumeID() != None and segmentationNode.GetLabelVolumeID() != priorLabelMapID)):
-          finding.SetAttribute("AssociatedNodeID", priorLabelMapID)
-        else:
-          print 'Unable to initialize from prior label map with id',priorLabelMapID,', segmentationNode = ',segmentationNode
 
       self.activeReportNode.AddFindingNodeID(finding.GetID())
       self.reportOverviewWidget.selectFindingRow(self.activeReportNode.GetIndexOfFindingNodeID(finding.GetID()))
@@ -1337,45 +1429,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if self.__tempLabelVol == None:
       self.__createTempLabelVolume()
 
-    if finding.GetAttribute("AssociatedNodeID"):
-      # init from the prior segmentation, then unset
-      priorSegmentationID = finding.GetAttribute("AssociatedNodeID")
-      print 'prepareVolumesForSegmentation: Finding has an associated prior: ',priorSegmentationID
-      priorSegmentationNode = slicer.mrmlScene.GetNodeByID(priorSegmentationID)
-      if priorSegmentationNode:
-        # threshold the prior to the finding value
-        findingColor = finding.GetColorID()
-        print 'Threshold the prior to the finding color',findingColor
-        threshold = vtk.vtkImageThreshold()
-        threshold.SetInputData(priorSegmentationNode.GetImageData())
-        threshold.SetReplaceOut(0)
-        threshold.SetReplaceIn(1)
-        threshold.SetInValue(findingColor)
-        # set all non zero values to the finding color
-        scalarRange = [0,0]
-        priorSegmentationNode.GetImageData().GetScalarRange(scalarRange)
-        print '\tprior scalarRange = ',scalarRange
-        threshold.ThresholdBetween(1, scalarRange[1])
-        threshold.Update()
-        threshold.ReleaseDataFlagOn()
-        priorSegmentationNode.SetAndObserveImageData(threshold.GetOutputDataObject(0))
-        # put the prior into the PET label volume so that it will be in
-        # the pipeine for segmentation
-        if (study.GetPETLabelVolumeNode().GetImageData() != None):
-          # check that the geometry matches
-          volumesLogic = slicer.modules.volumes.logic()
-          geometryCheckString = volumesLogic.CheckForLabelVolumeValidity(study.GetPETLabelVolumeNode(), priorSegmentationNode)
-          if geometryCheckString != "":
-            print 'Resampling prior due to geometry mismatch:\n',geometryCheckString
-            resampledSegmentationNode = volumesLogic.ResampleVolumeToReferenceVolume(priorSegmentationNode, study.GetPETLabelVolumeNode())
-            study.GetPETLabelVolumeNode().Copy(resampledSegmentationNode)
-          else:
-            # geometry matches
-            study.GetPETLabelVolumeNode().Copy(priorSegmentationNode)
-        else:
-          # just copy to init it
-          study.GetPETLabelVolumeNode().Copy(priorSegmentationNode)
-
     self.__tempLabelVol.Copy(study.GetPETLabelVolumeNode())
 
     self.__tempLabelVol.SetName("LongitudinalPETCT_CroppedLabelVolume")
@@ -1443,11 +1496,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     pasted = SegmentationHelper.pasteFromCroppedToMainLabelVolume(self.__tempLabelVol, seg.GetLabelVolumeNode(), finding.GetColorID())
 
-    # if there was a prior, unset it now (if done before this, it can get
-    # over written or cropped out)
-    if finding.GetAttribute("AssociatedNodeID"):
-      finding.RemoveAttribute("AssociatedNodeID")
-
     #set coordinates and extent of roi used for segmentation
     c = [0.,0.,0.]
     r = [0.,0.,0.]
@@ -1507,7 +1555,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if (study == None) | (finding == None):
       return
 
-    stats = LabelStatistics.LabelStatisticsLogic(study.GetPETVolumeNode(), study.GetPETLabelVolumeNode())
+    stats = LabelStatisticsLogic(study.GetPETVolumeNode(), study.GetPETLabelVolumeNode())
 
     if finding.GetColorID() in stats.labelStats["Labels"]:
       idx = stats.labelStats["Labels"].index(finding.GetColorID())
