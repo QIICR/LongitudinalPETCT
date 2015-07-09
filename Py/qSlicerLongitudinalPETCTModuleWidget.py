@@ -263,12 +263,19 @@ class qSlicerLongitudinalPETCTModuleWidget:
     # label map
     if (segmentationNode == None or
         segmentationNode.GetLabelVolumeNodeID() == None or
-        (segmentationNode.GetLabelVolumeNodeID() != None and segmentationNode.GetLabelVolumeID() != priorSegmentationID)):
+        (segmentationNode.GetLabelVolumeNodeID() != None and segmentationNode.GetLabelVolumeNodeID() != priorSegmentationID)):
+      # unset the mrml scene to reduce confusion from temp vols and slow updates
+      self.priorSegComboBox.setMRMLScene(None)
+
       # init from the prior segmentation
       ViewHelper.Info('Finding has an associated prior: ' + priorSegmentationID)
       # threshold the prior to the finding value
       findingColor = finding.GetColorID()
       ViewHelper.Info('Threshold the prior to the finding color ' + str(findingColor))
+      volumesLogic = slicer.modules.volumes.logic()
+      thresholdedPriorNode = volumesLogic.CloneVolumeWithoutImageData(slicer.mrmlScene, priorSegmentationNode, priorSegmentationNode.GetName() + '-threshold')
+      thresholdedPriorNode.SetHideFromEditors(1)
+
       threshold = vtk.vtkImageThreshold()
       threshold.SetInputData(priorSegmentationNode.GetImageData())
       threshold.SetReplaceOut(0)
@@ -281,27 +288,29 @@ class qSlicerLongitudinalPETCTModuleWidget:
       threshold.ThresholdBetween(1, scalarRange[1])
       threshold.Update()
       threshold.ReleaseDataFlagOn()
-      priorSegmentationNode.SetAndObserveImageData(threshold.GetOutputDataObject(0))
+      thresholdedPriorNode.SetAndObserveImageData(threshold.GetOutputDataObject(0))
       # put the prior into the PET label volume so that it will be in
       # the pipeine for segmentation
       if (study.GetPETLabelVolumeNode().GetImageData() != None):
         # check that the geometry matches
-        volumesLogic = slicer.modules.volumes.logic()
-        geometryCheckString = volumesLogic.CheckForLabelVolumeValidity(study.GetPETLabelVolumeNode(), priorSegmentationNode)
+        geometryCheckString = volumesLogic.CheckForLabelVolumeValidity(study.GetPETLabelVolumeNode(), thresholdedPriorNode)
         if geometryCheckString != "":
           ViewHelper.Info('Resampling prior due to geometry mismatch:\n' + geometryCheckString)
-          resampledSegmentationNode = volumesLogic.ResampleVolumeToReferenceVolume(priorSegmentationNode, study.GetPETLabelVolumeNode())
+          resampledSegmentationNode = volumesLogic.ResampleVolumeToReferenceVolume(thresholdedPriorNode, study.GetPETLabelVolumeNode())
           study.GetPETLabelVolumeNode().Copy(resampledSegmentationNode)
           # clean up
           slicer.mrmlScene.RemoveNode(resampledSegmentationNode)
         else:
           # geometry matches
           ViewHelper.Info('Geometry matches, copying')
-          study.GetPETLabelVolumeNode().Copy(priorSegmentationNode)
+          study.GetPETLabelVolumeNode().Copy(thresholdedPriorNode)
       else:
         # just copy to init it
         ViewHelper.Info('Just copy it')
-        study.GetPETLabelVolumeNode().Copy(priorSegmentationNode)
+        study.GetPETLabelVolumeNode().Copy(thresholdedPriorNode)
+      # clean up
+      slicer.mrmlScene.RemoveNode(thresholdedPriorNode)
+      self.priorSegComboBox.setMRMLScene(slicer.mrmlScene)
       ViewHelper.showInformationMessageBox('Initializing done', 'Finished initializing from prior segmentation')
 
   def __createTempCroppedVolume(self):
