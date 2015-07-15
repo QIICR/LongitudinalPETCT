@@ -48,7 +48,6 @@ class Q_SLICER_LONGITUDINALPETCT_MODULE_WIDGETS_EXPORT qMRMLLongitudinalPETCTFin
   Q_PROPERTY(QString findingName READ findingName WRITE setFindingName)
   Q_PROPERTY(int findingColorID READ findingColorID WRITE setFindingColorID)
 
-
 public:
   typedef qMRMLLongitudinalPETCTDialog Superclass;
   qMRMLLongitudinalPETCTFindingSettingsDialog(QWidget *parent=0);
@@ -69,7 +68,6 @@ public slots:
 
 protected slots:
   void presetButtonClicked(QAbstractButton* button);
-
 
 protected:
   QScopedPointer<qMRMLLongitudinalPETCTFindingSettingsDialogPrivate> d_ptr;

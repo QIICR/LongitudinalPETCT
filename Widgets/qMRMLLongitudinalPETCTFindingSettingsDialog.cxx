@@ -22,13 +22,15 @@
 #include "qMRMLLongitudinalPETCTFindingSettingsDialog.h"
 #include "ui_qMRMLLongitudinalPETCTFindingSettingsDialog.h"
 
-#include <vtkMRMLLongitudinalPETCTReportNode.h>
-#include <vtkMRMLLongitudinalPETCTFindingNode.h>
-
-
+#include <QAbstractButton>
+#include <QDebug>
 #include <QMessageBox>
 
-#include <QAbstractButton>
+#include <vtkMRMLLongitudinalPETCTFindingNode.h>
+#include <vtkMRMLLongitudinalPETCTReportNode.h>
+#include <vtkMRMLLongitudinalPETCTSegmentationNode.h>
+
+
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_LongitudinalPETCT
@@ -57,7 +59,7 @@ public:
 // --------------------------------------------------------------------------
 qMRMLLongitudinalPETCTFindingSettingsDialogPrivate::qMRMLLongitudinalPETCTFindingSettingsDialogPrivate(
     qMRMLLongitudinalPETCTFindingSettingsDialog& object) :
-    q_ptr(&object), findingName(""), findingColorID(-1)
+  q_ptr(&object), findingName(""), findingColorID(-1)
 {
 }
 
@@ -77,6 +79,7 @@ qMRMLLongitudinalPETCTFindingSettingsDialogPrivate::setupUi(
   this->ComboBoxColor->setNoneEnabled(false);
 
   QObject::connect( this->ButtonGroupFindingPresets, SIGNAL(buttonClicked(QAbstractButton*)), q, SLOT(presetButtonClicked(QAbstractButton*)) );
+
 }
 
 
@@ -116,13 +119,15 @@ void qMRMLLongitudinalPETCTFindingSettingsDialog::accept()
   d->findingName = name;
   d->findingColorID = id;
 
-
   double c[4];
 
   vtkMRMLLongitudinalPETCTReportNode* report = this->reportNode();
 
-  if(!report)
+  if (!report)
+    {
+    std::cout << "No report!" << std::endl;
     return;
+    }
 
   vtkMRMLColorNode* cn = const_cast<vtkMRMLColorTableNode*>(this->reportNode()->GetColorTableNode());
 
@@ -150,27 +155,26 @@ void qMRMLLongitudinalPETCTFindingSettingsDialog::accept()
         }
       else
         {
-          emit findingSpecified(name, id);
-          Superclass::accept();
+        emit findingSpecified(name, id);
+        Superclass::accept();
         }
     }
 }
 
+//-----------------------------------------------------------------------------
 void qMRMLLongitudinalPETCTFindingSettingsDialog::updateDialogFromMRML()
 {
   Q_D(qMRMLLongitudinalPETCTFindingSettingsDialog);
   Q_ASSERT(d->ComboBoxColor);
   Q_ASSERT(d->ButtonPresetTumor);
 
-
   vtkMRMLLongitudinalPETCTReportNode* report = this->reportNode();
 
-  if(report)
+  if (report)
     {
-      d->ComboBoxColor->setMRMLColorNode(const_cast<vtkMRMLColorTableNode*>(report->GetColorTableNode()));
-      d->ButtonPresetTumor->click();
+    d->ComboBoxColor->setMRMLColorNode(const_cast<vtkMRMLColorTableNode*>(report->GetColorTableNode()));
+    d->ButtonPresetTumor->click();
     }
-
 }
 
 
@@ -212,7 +216,6 @@ qMRMLLongitudinalPETCTFindingSettingsDialog::presetButtonClicked(
     }
 }
 
-
 //-----------------------------------------------------------------------------
 QString
 qMRMLLongitudinalPETCTFindingSettingsDialog::findingName()
@@ -244,3 +247,4 @@ qMRMLLongitudinalPETCTFindingSettingsDialog::setFindingColorID(int id)
   Q_D(qMRMLLongitudinalPETCTFindingSettingsDialog);
   d->findingColorID = id;
 }
+

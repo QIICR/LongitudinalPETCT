@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>374</width>
-    <height>209</height>
+    <height>317</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -306,8 +306,25 @@ Node</string>
  <customwidgets>
   <customwidget>
    <class>qMRMLLabelComboBox</class>
-   <extends>QWidget</extends>
+   <extends>qMRMLWidget</extends>
    <header>qMRMLLabelComboBox.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>qMRMLNodeComboBox</class>
+   <extends>QWidget</extends>
+   <header>qMRMLNodeComboBox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>qMRMLWidget</class>
+   <extends>QWidget</extends>
+   <header>qMRMLWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ctkCollapsibleButton</class>
+   <extends>QWidget</extends>
+   <header>ctkCollapsibleButton.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
