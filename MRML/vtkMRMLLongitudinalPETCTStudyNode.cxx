@@ -470,16 +470,6 @@ vtkMRMLLongitudinalPETCTStudyNode::ObserveRegistrationTransform(bool observe)
                   != this->RegistrationTransformNode)
             roiNode->SetAndObserveTransformNodeID(
                 this->RegistrationTransformNode->GetID());
-
-
-          vtkMRMLVolumePropertyNode* propNode =
-              this->VolumeRenderingDisplayNode->GetVolumePropertyNode();
-          if (propNode
-              && propNode->GetParentTransformNode()
-                  != this->RegistrationTransformNode)
-            propNode->SetAndObserveTransformNodeID(
-                this->RegistrationTransformNode->GetID());
-
         }
     }
   else
@@ -496,11 +486,6 @@ vtkMRMLLongitudinalPETCTStudyNode::ObserveRegistrationTransform(bool observe)
               this->VolumeRenderingDisplayNode->GetROINode();
           if (roiNode)
             roiNode->SetAndObserveTransformNodeID(NULL);
-
-          vtkMRMLVolumePropertyNode* propNode =
-              this->VolumeRenderingDisplayNode->GetVolumePropertyNode();
-          if (propNode)
-            propNode->SetAndObserveTransformNodeID(NULL);
         }
     }
 
