@@ -16,19 +16,25 @@
  *
  *=========================================================================*/
 #ifndef __itkDCMTKFileReader_h
-
 #define __itkDCMTKFileReader_h
+
+// DCMTK includes
+#include "dcmtk/dcmdata/dcxfer.h"
+#include "dcmtk/dcmdata/dcvrds.h"
+#include "dcmtk/dcmdata/dcstack.h"
+#include "dcmtk/dcmdata/dcdatset.h"
+
+// ITK includes
+#include "itkByteSwapper.h"
+#include "itkImageIOBase.h"
+#include "itkIntTypes.h"
+#include "itkMacro.h"
+#include "vnl/vnl_vector.h"
+
+// STD includes
 #include <stack>
 #include <vector>
-#include "itkByteSwapper.h"
-#include "itkIntTypes.h"
-#include "vnl/vnl_vector.h"
-#include "dcxfer.h"
-#include "dcvrds.h"
-#include "dcstack.h"
-#include "dcdatset.h"
-#include "itkMacro.h"
-#include "itkImageIOBase.h"
+
 
 class DcmSequenceOfItems;
 class DcmFileFormat;
