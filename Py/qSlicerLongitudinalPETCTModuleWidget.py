@@ -42,7 +42,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
   def __createReportWidget(self):
     if not self.reportWidget:
-      self.reportWidget = slicer.modulewidget.qMRMLLongitudinalPETCTReportWidget()
+      self.reportWidget = slicer.qMRMLLongitudinalPETCTReportWidget()
       self.reportWidget.setObjectName("ReportWidget")
       self.reportWidget.setMRMLScene(slicer.mrmlScene)
       self.reportWidget.connect('reportNodeChanged(vtkMRMLLongitudinalPETCTReportNode*)',self.onActiveReportNodeChanged)
@@ -53,7 +53,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     if not self.reportOverviewWidget:
 
-      self.reportOverviewWidget = slicer.modulewidget.qMRMLLongitudinalPETCTReportOverviewWidget()
+      self.reportOverviewWidget = slicer.qMRMLLongitudinalPETCTReportOverviewWidget()
       self.reportOverviewWidget.setObjectName("ReportOverviewWidget")
       self.reportOverviewWidget.setColumnSelectableOn()
       self.reportOverviewWidget.setReportNode(self.activeReportNode)
@@ -66,7 +66,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     if not self.studyWidget:
 
-      self.studyWidget = slicer.modulewidget.qMRMLLongitudinalPETCTStudyWidget()
+      self.studyWidget = slicer.qMRMLLongitudinalPETCTStudyWidget()
       self.studyWidget.setObjectName("StudyWidget")
       self.studyWidget.setReportNode(self.activeReportNode)
       self.studyWidget.connect('studySelectedForSegmentation(vtkMRMLLongitudinalPETCTStudyNode*, bool)',self.onStudySelectedForSegmentation)
@@ -77,7 +77,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
   def __createFindingWidget(self):
 
     if not self.findingWidget:
-      self.findingWidget = slicer.modulewidget.qMRMLLongitudinalPETCTFindingWidget()
+      self.findingWidget = slicer.qMRMLLongitudinalPETCTFindingWidget()
       self.findingWidget.setObjectName("FindingWidget")
       self.findingWidget.setMRMLScene(slicer.mrmlScene)
       self.findingWidget.setReportNode(self.activeReportNode)
@@ -136,7 +136,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     if not self.analysisWidget:
 
-      self.analysisWidget = slicer.modulewidget.qMRMLLongitudinalPETCTAnalysisWidget()
+      self.analysisWidget = slicer.qMRMLLongitudinalPETCTAnalysisWidget()
       self.analysisWidget.setObjectName("AnalysisWidget")
       self.analysisWidget.setReportNode(self.activeReportNode)
       self.analysisWidget.connect('qualitativeAnalysisClicked(bool)', self.onShowQualitativeView)
@@ -149,7 +149,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
   def __createModuleSettingsWidget(self):
     if not self.moduleSettingsWidget:
-      self.moduleSettingsWidget = slicer.modulewidget.qMRMLLongitudinalPETCTModuleSettingsWidget()
+      self.moduleSettingsWidget = slicer.qMRMLLongitudinalPETCTModuleSettingsWidget()
       self.findingWidget.setObjectName("ModuleSettingsWidget")
 
       petColor = ViewHelper.getSetting("petColor")
