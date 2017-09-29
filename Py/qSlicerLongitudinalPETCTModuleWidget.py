@@ -1029,7 +1029,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
   def onFindingNodeAdded(self, finding):
 
-    dialog = slicer.modulewidget.qMRMLLongitudinalPETCTFindingSettingsDialog()
+    dialog = slicer.qMRMLLongitudinalPETCTFindingSettingsDialog()
     dialog.setReportNode(self.activeReportNode)
 
     dialog.exec_()
