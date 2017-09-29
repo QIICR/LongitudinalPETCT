@@ -233,15 +233,21 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     columns = self.__getSeriesInformation(files, self.tags['columns'])
     slices = len(files)
     
-    spacingRows = self.__getSeriesInformation(files, self.tags['spacing']).split('\\')[0]
-    spacingCols = self.__getSeriesInformation(files, self.tags['spacing']).split('\\')[1]
+    try:
+      spacingRows = self.__getSeriesInformation(files, self.tags['spacing']).split('\\')[0]
+      spacingCols = self.__getSeriesInformation(files, self.tags['spacing']).split('\\')[1]
     
-    width = int(columns) * float(spacingCols)
-    height = int(rows) * float(spacingRows)
+      width = int(columns) * float(spacingCols)
+      height = int(rows) * float(spacingRows)
+    except IndexError:
+      print('Could not get spacing from dicom tag: %s' % self.tags['spacing'])
+      width = 'NaN'
+      height = 'NaN'
     
     seriesTime = self.__getSeriesInformation(files, self.tags['seriesTime'])          
     seriesTime = seriesTime[:2]+":"+seriesTime[2:4]+":"+seriesTime[4:6]
-    return "Series Time: "+seriesTime+ " | Width: "+str(width)+"mm | Height: "+str(height)+"mm | Slices: "+str(slices)
+    seriesDescription = self.__getSeriesInformation(files, self.tags['seriesDescription'])
+    return seriesDescription + " Series Time: "+seriesTime+ " | Width: "+str(width)+"mm | Height: "+str(height)+"mm | Slices: "+str(slices)
 
   
   def load(self,loadable):
