@@ -1,27 +1,22 @@
-# slicer imports
-from __main__ import vtk, slicer, ctk, qt
-
-# python includes
-import sys
+import vtk
+import slicer
 
 
-
-class SlicerLongitudinalPETCTModuleSegmentationHelper( object ):
-  '''
+class SlicerLongitudinalPETCTModuleSegmentationHelper(object):
+  """
   classdocs
-  '''
+  """
  
-    
-  @staticmethod  
+  @staticmethod
   def pasteFromCroppedToMainLabelVolume(croppedLblVolume, mainLblVolume, colorID):
     
     pasted = False
     
-    if (croppedLblVolume != None) & (mainLblVolume != None):
+    if (croppedLblVolume is not None) & (mainLblVolume is not None):
       croppedImgData = croppedLblVolume.GetImageData()
       mainImageData = mainLblVolume.GetImageData()
       
-      if (croppedImgData != None) & (mainImageData != None): 
+      if (croppedImgData is not None) & (mainImageData is not None):
         rastoijk = vtk.vtkMatrix4x4()
         mainLblVolume.GetRASToIJKMatrix(rastoijk)
       
@@ -40,23 +35,22 @@ class SlicerLongitudinalPETCTModuleSegmentationHelper( object ):
               d = mainImageData.GetScalarComponentAsDouble(posInMain[0],posInMain[1],posInMain[2],0)
               if (d == 0.) & (p == colorID):
                 mainImageData.SetScalarComponentFromDouble(posInMain[0],posInMain[1],posInMain[2],0,p)
-                if pasted == False:
+                if not pasted:
                   pasted = True    
               
     return pasted         
-                
-  
+
   @staticmethod
   def pasteFromMainToCroppedLabelVolume(mainLblVolume, croppedLblVolume, colorID):
     
     pasted = False
     
-    if (mainLblVolume != None) & (croppedLblVolume != None):
+    if (mainLblVolume is not None) & (croppedLblVolume is not None):
       mainImageData = mainLblVolume.GetImageData()
       croppedImgData = croppedLblVolume.GetImageData()
       
       
-      if (mainImageData != None) & (croppedImgData != None):
+      if (mainImageData is not None) & (croppedImgData is not None):
       
         rastoijk = vtk.vtkMatrix4x4()
         mainLblVolume.GetRASToIJKMatrix(rastoijk)
@@ -75,11 +69,10 @@ class SlicerLongitudinalPETCTModuleSegmentationHelper( object ):
               p = mainImageData.GetScalarComponentAsDouble(x+croppedLblIJKShiftedOrigin[0],y+croppedLblIJKShiftedOrigin[1],z+croppedLblIJKShiftedOrigin[2],0)                             
               if p == colorID:
                 croppedImgData.SetScalarComponentFromDouble(x,y,z,0,p)
-                if pasted == False:
+                if not pasted:
                   pasted = True
                   
     return pasted 
-  
   
   @staticmethod
   def containsSegmentation(lblVolume, colorID):
@@ -130,5 +123,3 @@ class SlicerLongitudinalPETCTModuleSegmentationHelper( object ):
           lblVolume.SetAndObserveImageData(output)
           output.Modified()
           lblVolume.Modified()
-                  
-            

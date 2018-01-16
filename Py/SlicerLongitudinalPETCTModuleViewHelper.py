@@ -1,15 +1,16 @@
-# slicer imports
-from __main__ import vtk, slicer, qt, ctk
+import vtk
+import slicer
+import qt
+import ctk
 
-# python includes
 import sys
 import time
 import datetime
 
-class SlicerLongitudinalPETCTModuleViewHelper( object ):
-  '''
+class SlicerLongitudinalPETCTModuleViewHelper(object):
+  """
   classdocs
-  '''
+  """
   
   # TODO: add a capability to control the level of messages
   @staticmethod
@@ -17,282 +18,81 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
     print("[LongitudinalPETCT " + time.strftime( "%m/%d/%Y %H:%M:%S" ) + "]: INFO: " + str( message ))
     sys.stdout.flush()
 
-
   @staticmethod
   def GetRYGSliceNodes():
-    sliceNodes = []
-    sliceNodes.append(slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeRed"))
-    sliceNodes.append(slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeYellow"))
-    sliceNodes.append(slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeGreen"))
-    
+    sliceNodes = [slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeRed"),
+                  slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeYellow"),
+                  slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeGreen")]
+
     return sliceNodes
-        
-  
+
   @staticmethod
-  def SetForegroundOpacity(opacity, rYGExcluded = False):
+  def SetForegroundOpacity(opacity, rYGExcluded=False):
     compositeNodes = slicer.util.getNodes('vtkMRMLSliceCompositeNode*')
     for compositeNode in compositeNodes.values():
       
-      if (rYGExcluded == True) & ((compositeNode.GetID() == 'vtkMRMLSliceCompositeNodeRed') | (compositeNode.GetID() == 'vtkMRMLSliceCompositeNodeYellow') | (compositeNode.GetID() == 'vtkMRMLSliceCompositeNodeGreen')):
+      if (rYGExcluded == True) & ((compositeNode.GetID() == 'vtkMRMLSliceCompositeNodeRed') |
+                                    (compositeNode.GetID() == 'vtkMRMLSliceCompositeNodeYellow') |
+                                    (compositeNode.GetID() == 'vtkMRMLSliceCompositeNodeGreen')):
         continue
       
       compositeNode.SetForegroundOpacity(opacity)  
 
   @staticmethod
-  def SetRYGBgFgLblVolumes(bgID = None, fgID = None, lblID = None, fit = False):
+  def SetRYGBgFgLblVolumes(bgID=None, fgID=None, lblID=None, fit=False):
     
-    compositeNodes = []
-    
-    compositeNodes.append(slicer.util.getNode('vtkMRMLSliceCompositeNodeRed'))
-    compositeNodes.append(slicer.util.getNode('vtkMRMLSliceCompositeNodeYellow'))
-    compositeNodes.append(slicer.util.getNode('vtkMRMLSliceCompositeNodeGreen'))
-    
+    compositeNodes = [slicer.util.getNode('vtkMRMLSliceCompositeNodeRed'),
+                      slicer.util.getNode('vtkMRMLSliceCompositeNodeYellow'),
+                      slicer.util.getNode('vtkMRMLSliceCompositeNodeGreen')]
+
     for cnode in compositeNodes:
-      cnode.SetBackgroundVolumeID( bgID );
-      cnode.SetForegroundVolumeID( fgID );
-      cnode.SetLabelVolumeID( lblID );
-    
+      cnode.SetBackgroundVolumeID( bgID )
+      cnode.SetForegroundVolumeID( fgID )
+      cnode.SetLabelVolumeID( lblID )
+
     if fit:
       appLogic = slicer.app.applicationLogic()
       if appLogic:
         appLogic.FitSliceToAll()
         
-        
   @staticmethod
-  def SetCompareBgFgLblVolumes(index, bgID, fgID = None, lblID = None, fit = False):
+  def SetCompareBgFgLblVolumes(index, bgID, fgID=None, lblID=None, fit=False):
     
     label = SlicerLongitudinalPETCTModuleViewHelper.compareLabel()
      
     compositeNodes = SlicerLongitudinalPETCTModuleViewHelper.getCompareSliceCompositeNodes(index)
     
     for cnode in compositeNodes:
-      cnode.SetBackgroundVolumeID( bgID );
-      cnode.SetForegroundVolumeID( fgID );
-      cnode.SetLabelVolumeID( lblID );
-    
+      cnode.SetBackgroundVolumeID( bgID )
+      cnode.SetForegroundVolumeID( fgID )
+      cnode.SetLabelVolumeID( lblID )
+
     if fit:
       appLogic = slicer.app.applicationLogic()
       if appLogic:
         appLogic.FitSliceToAll()
-    
-  @staticmethod
-  def SetBgFgLblVolumes(bgID, fgID = None, lblID = None, propagate = True):
-    appLogic = slicer.app.applicationLogic()
-    selectionNode = appLogic.GetSelectionNode()
-    selectionNode.SetReferenceActiveVolumeID(bgID)
-    selectionNode.SetReferenceSecondaryVolumeID(fgID)
-    selectionNode.SetReferenceActiveLabelVolumeID(lblID)
-    
-    if fgID:
-      compositeNodes = slicer.util.getNodes('vtkMRMLSliceCompositeNode*')
-      for compositeNode in compositeNodes.values():
-        #if (compositeNode.GetID() == 'vtkMRMLSlicerCompositeNodeRed') | (compositeNode.GetID() == 'vtkMRMLSlicerCompositeNodeYellow') | (compositeNode.GetID() == 'vtkMRMLSlicerCompositeNodeGreen'):
-        compositeNode.SetForegroundOpacity(0.6)
-          
-    if propagate:
-      appLogic.PropagateVolumeSelection()
 
   @staticmethod
-  def SetForegroundWindowLevel(window, level):
-    appLogic = slicer.app.applicationLogic()
-    selectionNode = appLogic.GetSelectionNode()
-    fgVolumeNodeID = selectionNode.GetSecondaryVolumeID()
-    fgVolumeNode = slicer.mrmlScene.GetNodeByID(fgVolumeNodeID)
-    
-    if fgVolumeNode:
-      fgDisplayNode = fgVolumeNode.GetScalarVolumeDisplayNode()
-      if fgDisplayNode:
-        fgDisplayNode.SetWindow(window)
-        fgDisplayNode.SetLevel(level)
-        
-  @staticmethod
-  def SetBackgroundWindowLevel(window, level):
-    appLogic = slicer.app.applicationLogic()
-    selectionNode = appLogic.GetSelectionNode()
-    bgVolumeNodeID = selectionNode.GetActiveVolumeID()
-    bgVolumeNode = slicer.mrmlScene.GetNodeByID(bgVolumeNodeID)
-    
-    if bgVolumeNode:
-      bgDisplayNode = bgVolumeNode.GetScalarVolumeDisplayNode()
-      if bgDisplayNode:
-        bgDisplayNode.SetWindow(window)
-        bgDisplayNode.SetLevel(level)
-
-  @staticmethod
-  def SetLabelVolume(lblID):
-    appLogic = slicer.app.applicationLogic()
-    selectionNode = appLogic.GetSelectionNode()
-    selectionNode.SetReferenceActiveLabelVolumeID(label)
-    appLogic.PropagateVolumeSelection()
-
-  @staticmethod
-  def getEditorParameterNode():
-    """Get the Editor parameter node - a singleton in the scene"""
-    node = None
-    size =  slicer.mrmlScene.GetNumberOfNodesByClass("vtkMRMLScriptedModuleNode")
-    for i in xrange(size):
-      n  = slicer.mrmlScene.GetNthNodeByClass( i, "vtkMRMLScriptedModuleNode" )
-      if n.GetModuleName() == "Editor":
-        node = n
-
-    if not node:
-      node = slicer.vtkMRMLScriptedModuleNode()
-      node.SetSingletonTag( "Editor" )
-      node.SetModuleName( "Editor" )
-      node.SetParameter( "label", "1" )
-      slicer.mrmlScene.AddNode(node)
-    return node
-  
-  
-  @staticmethod 
-  def getSliceNodesCrossingPositionRAS():
+  def setSliceNodesCrossingPositionRAS(crossingRAS=None):
+    if crossingRAS is None:
+      crossingRAS = [0., 0., 0.]
     red = slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeRed")
     yellow = slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeYellow")
     green = slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeGreen")
-    
-    crossing = [0,0,0]
-    
-    orientation = "Sagittal"
-    if (red.GetOrientationString() == orientation) | (yellow.GetOrientationString() == orientation) | (green.GetOrientationString() == orientation):
+
+    orientations = ["Sagittal", "Coronal", "Axial"]
+
+    def setSliceOffset(orientation):
+      idx = orientations.index(orientation)
       if red.GetOrientationString() == orientation:
-        crossing[0] = red.GetSliceOffset()
-      elif yellow.GetOrientationString() == orientation:
-        crossing[0] = yellow.GetSliceOffset() 
-      elif green.GetOrientationString() == orientation:
-        crossing[0] = green.GetSliceOffset() 
-    
-    orientation = "Coronal"
-    if (red.GetOrientationString() == orientation) | (yellow.GetOrientationString() == orientation) | (green.GetOrientationString() == orientation):
-      if red.GetOrientationString() == orientation:
-        crossing[1] = red.GetSliceOffset()
-      elif yellow.GetOrientationString() == orientation:
-        crossing[1] = yellow.GetSliceOffset() 
-      elif green.GetOrientationString() == orientation:
-        crossing[1] = green.GetSliceOffset() 
-        
-    orientation = "Axial"
-    if (red.GetOrientationString() == orientation) | (yellow.GetOrientationString() == orientation) | (green.GetOrientationString() == orientation):
-      if red.GetOrientationString() == orientation:
-        crossing[2] = red.GetSliceOffset()
-      elif yellow.GetOrientationString() == orientation:
-        crossing[2] = yellow.GetSliceOffset() 
-      elif green.GetOrientationString() == orientation:
-        crossing[2] = green.GetSliceOffset()   
-        
-    return crossing
-  
-  
-  @staticmethod 
-  def setSliceNodesCrossingPositionRAS(crossingRAS = [0.,0.,0.]):
-    red = slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeRed")
-    yellow = slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeYellow")
-    green = slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeGreen")
-    
-    orientation = "Sagittal"
-    if (red.GetOrientationString() == orientation) | (yellow.GetOrientationString() == orientation) | (green.GetOrientationString() == orientation):
-      if red.GetOrientationString() == orientation:
-        red.SetSliceOffset(crossingRAS[0])
+        red.SetSliceOffset(crossingRAS[idx])
       if yellow.GetOrientationString() == orientation:
-        yellow.SetSliceOffset(crossingRAS[0])
+        yellow.SetSliceOffset(crossingRAS[idx])
       if green.GetOrientationString() == orientation:
-        green.SetSliceOffset(crossingRAS[0])
-    
-    orientation = "Coronal"
-    if (red.GetOrientationString() == orientation) | (yellow.GetOrientationString() == orientation) | (green.GetOrientationString() == orientation):
-      if red.GetOrientationString() == orientation:
-        red.SetSliceOffset(crossingRAS[1])
-      if yellow.GetOrientationString() == orientation:
-        yellow.SetSliceOffset(crossingRAS[1])
-      if green.GetOrientationString() == orientation:
-        green.SetSliceOffset(crossingRAS[1])
-        
-    orientation = "Axial"
-    if (red.GetOrientationString() == orientation) | (yellow.GetOrientationString() == orientation) | (green.GetOrientationString() == orientation):
-      if red.GetOrientationString() == orientation:
-        red.SetSliceOffset(crossingRAS[2])
-      if yellow.GetOrientationString() == orientation:
-        yellow.SetSliceOffset(crossingRAS[2])
-      if green.GetOrientationString() == orientation:
-        green.SetSliceOffset(crossingRAS[2])
-        
-  
-  @staticmethod 
-  def setCompareSliceNodesCrossingPositionRAS(index, crossingRAS = [0.,0.,0.]):
-    
-    compareSliceNodes = SlicerLongitudinalPETCTModuleViewHelper.getCompareSliceNodes(index)
-    if (index > -1) & (index < len(compareSliceNodes)):
-      
-      orientation = "Sagittal"
-      if (compareSliceNodes[0].GetOrientationString() == orientation) | (compareSliceNodes[1].GetOrientationString() == orientation) | (compareSliceNodes[2].GetOrientationString() == orientation):
-        if compareSliceNodes[0].GetOrientationString() == orientation:
-          compareSliceNodes[0].SetSliceOffset(crossingRAS[0])
-        if compareSliceNodes[1].GetOrientationString() == orientation:
-          compareSliceNodes[1].SetSliceOffset(crossingRAS[0])
-        if compareSliceNodes[2].GetOrientationString() == orientation:
-          compareSliceNodes[2].SetSliceOffset(crossingRAS[0])
-    
-      orientation = "Coronal"
-      if (compareSliceNodes[0].GetOrientationString() == orientation) | (compareSliceNodes[1].GetOrientationString() == orientation) | (compareSliceNodes[2].GetOrientationString() == orientation):
-        if compareSliceNodes[0].GetOrientationString() == orientation:
-          compareSliceNodes[0].SetSliceOffset(crossingRAS[1])
-        if compareSliceNodes[1].GetOrientationString() == orientation:
-          compareSliceNodes[1].SetSliceOffset(crossingRAS[1])
-        if compareSliceNodes[2].GetOrientationString() == orientation:
-          compareSliceNodes[2].SetSliceOffset(crossingRAS[1])
-        
-      orientation = "Axial"
-      if (compareSliceNodes[0].GetOrientationString() == orientation) | (compareSliceNodes[1].GetOrientationString() == orientation) | (compareSliceNodes[2].GetOrientationString() == orientation):
-        if compareSliceNodes[0].GetOrientationString() == orientation:
-          compareSliceNodes[0].SetSliceOffset(crossingRAS[2])
-        if compareSliceNodes[1].GetOrientationString() == orientation:
-          compareSliceNodes[1].SetSliceOffset(crossingRAS[2])
-        if compareSliceNodes[2].GetOrientationString() == orientation:
-          compareSliceNodes[2].SetSliceOffset(crossingRAS[2])
-  
-  @staticmethod
-  def centerROIonSliceNodesOffset(roi, centeringTransform):
-    red = slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeRed")
-    yellow = slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeYellow")
-    green = slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeGreen")
-    roiXYZ = [0,0,0]
-    
-    orientation = "Sagittal"
-    if (red.GetOrientationString() == orientation) | (yellow.GetOrientationString() == orientation) | (green.GetOrientationString() == orientation):
-      if red.GetOrientationString() == orientation:
-        roiXYZ[0] = red.GetSliceOffset()
-      elif yellow.GetOrientationString() == orientation:
-        roiXYZ[0] = yellow.GetSliceOffset() 
-      elif green.GetOrientationString() == orientation:
-        roiXYZ[0] = green.GetSliceOffset() 
-    
-    orientation = "Coronal"
-    if (red.GetOrientationString() == orientation) | (yellow.GetOrientationString() == orientation) | (green.GetOrientationString() == orientation):
-      if red.GetOrientationString() == orientation:
-        roiXYZ[1] = red.GetSliceOffset()
-      elif yellow.GetOrientationString() == orientation:
-        roiXYZ[1] = yellow.GetSliceOffset() 
-      elif green.GetOrientationString() == orientation:
-        roiXYZ[1] = green.GetSliceOffset() 
-        
-    orientation = "Axial"
-    if (red.GetOrientationString() == orientation) | (yellow.GetOrientationString() == orientation) | (green.GetOrientationString() == orientation):
-      if red.GetOrientationString() == orientation:
-        roiXYZ[2] = red.GetSliceOffset()
-      elif yellow.GetOrientationString() == orientation:
-        roiXYZ[2] = yellow.GetSliceOffset() 
-      elif green.GetOrientationString() == orientation:
-        roiXYZ[2] = green.GetSliceOffset()   
-    
-    if centerTransform:
-      roi.SetAndObserveTransformNodeID(centerTransform.GetID())   
-      centerTransformMatrix = centerTransform.GetMatrixTransformToParent()
-      roi.SetXYZ(roiXYZ[0]-centerTransformMatrix.GetElement(0,3),roiXYZ[1]-centerTransformMatrix.GetElement(1,3),roiXYZ[2]-centerTransformMatrix.GetElement(2,3))  
-    else:
-      roi.SetXYZ(roiXYZ)      
-      
-      
-              
-  
+        green.SetSliceOffset(crossingRAS[idx])
+
+    map(setSliceOffset, orientations)
+
   @staticmethod
   def getROIPositionInRAS(roi):
     xyz = [0.,0.,0.]
@@ -312,8 +112,7 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
       xyz = [xyz[0],xyz[1],xyz[2]]  
             
     return xyz  
-  
-  
+
   @staticmethod
   def updateQuantitativeViewLayout(studies):
     
@@ -349,7 +148,6 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
     layoutNode.AddLayoutDescription(id,quantView)
     layoutNode.SetViewArrangement(id)
         
-     
   @staticmethod
   def updateQualitativeViewLayout(studies):
     
@@ -411,19 +209,17 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
     id = 123 + studies
     layoutNode.AddLayoutDescription(id,compareView)
     layoutNode.SetViewArrangement(id)
-    
-    
+
     compViewNodes = SlicerLongitudinalPETCTModuleViewHelper.getCompareViewNodes()
     for vn in compViewNodes:
       if vn.GetBoxVisible != 0:
         vn.SetBoxVisible(0)
      
-    
-    for s in range(studies):     
+    for s in range(studies):
       compSliceNodes = SlicerLongitudinalPETCTModuleViewHelper.getCompareSliceNodes(s)  
       for sn in compSliceNodes:
         outline = SlicerLongitudinalPETCTModuleViewHelper.getSetting("OutlineSegmentations")
-        if outline == True:  
+        if outline:
           sn.SetUseLabelOutline(SlicerLongitudinalPETCTModuleViewHelper.getSetting("OutlineSegmentations"))
         
       compSliceCompositeNodes = SlicerLongitudinalPETCTModuleViewHelper.getCompareSliceCompositeNodes(s) 
@@ -450,15 +246,6 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
     return 'Longitudinal PET/CT Analysis Module'       
        
   @staticmethod
-  def findingInfoMessage():
-    return 'How to create a Finding\n\n\n1. Navigate through the image slices (red, yellow or green) to a lesion.\n\n2. Hold the SHIFT key and move the mouse cursor to the center of the lesion. All slice views will be updated to this position.\n\n3. Select "Create new Finding" to create a ROI bounding box around the lesion.\n\n4. Click "Edit Segmentation" to open the Editor mode.\nPerform the segmentation of the lesion.\n\n5. Click "Apply Segmentation to Finding" to exit the Editor mode and return to the module.\n'       
-  
-  @staticmethod
-  def reportsHelpText():
-    return '<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\np, li { white-space: pre-wrap; }\n</style></head><body style=\" font-family:\'Lucida Grande\'; font-size:13pt; font-weight:400; font-style:normal;\">\n<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600; text-decoration: underline;\">Importing PET/CT studies to a Report</span></p>\n<ol style=\"margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;\"><li style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><img src=\":/Icons/SlicerLoadDICOM.png\" /> Open the Slicer DICOM Database</li>\n<li style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Browse database for patient and select entry</li>\n<li style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Select DICOM Data which has been detected by the <span style=\" font-weight:600; font-style:italic;\">Longitudinal PET/CT Analysis</span><span style=\" font-style:italic;\"> Reader</span></li>\n<li style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Click <span style=\" font-weight:600; font-style:italic;\">Load Selection to Slicer </span></li>\n<li style=\" font-weight:600; font-style:italic;\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><img src=\":/Icons/LongPETCT_small.png\" /> <span style=\" font-weight:400; font-style:normal;\">Reopen</span><span style=\" font-style:normal;\"> Longitudinal PET/CT Analysis</span><span style=\" font-weight:400; font-style:normal;\"> module</span></li>\n<li style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Select the new generated <span style=\" font-weight:600; font-style:italic;\">Report</span></li></ol></body></html>'
-  
-    
-  @staticmethod
   def compareLabel():
     return 'CompareLongitudinalPETCT_'
   
@@ -472,7 +259,6 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
     viewNodes.SetReferenceCount(viewNodes.GetReferenceCount()-1)
     viewNodes.InitTraversal()
     viewNode = viewNodes.GetNextItemAsObject()
-    
     return viewNode
   
   @staticmethod
@@ -481,16 +267,8 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
     chartViewNodes.SetReferenceCount(chartViewNodes.GetReferenceCount()-1)
     chartViewNodes.InitTraversal()
     chartViewNode = chartViewNodes.GetNextItemAsObject()
-    
     return chartViewNode
  
-  @staticmethod
-  def getROINodesCollection():
-    roiNodes = slicer.mrmlScene.GetNodesByClass('vtkMRMLAnnotationROINode')
-    roiNodes.SetReferenceCount(roiNodes.GetReferenceCount()-1)
-    
-    return roiNodes 
-    
   @staticmethod
   def getCompareViewNodes():
     compareViewNodes = []
@@ -507,8 +285,6 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
         
         compareViewNodes.insert(pos, vn)
       vn = viewNodes.GetNextItemAsObject()
-    
-        
     return compareViewNodes
   
   @staticmethod
@@ -527,7 +303,6 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
         
         compareSliceNodes.insert(pos, sn)
       sn = sliceNodes.GetNextItemAsObject()      
-      
     return compareSliceNodes
   
   @staticmethod
@@ -546,18 +321,7 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
         
         compareSliceCompositeNodes.insert(pos, scn)
       scn = compositeNodes.GetNextItemAsObject() 
-        
     return compareSliceCompositeNodes
-  
-  @staticmethod
-  def removeObserversFromCompareViewNodes(observerIDsList):
-   
-    if observerIDsList:
-      compareViewNodes = SlicerLongitudinalPETCTModuleViewHelper.getCompareViewNodes()
-    
-      for vn in compareViewNodes:
-        for id in observerIDsList:
-          vn.RemoveObserver(id)
   
   @staticmethod
   def spinStandardViewNode(spin):
@@ -577,8 +341,6 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
   
   @staticmethod 
   def adjustColorFunction(colorTransferFunction, scalarVolumeDisplayNode):
-    
-    
     if scalarVolumeDisplayNode:
       colorNode = scalarVolumeDisplayNode.GetColorNode()  
       window = scalarVolumeDisplayNode.GetWindow()
@@ -595,9 +357,7 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
       for i in xrange(num):
         cnctf.GetColor(rng*i/(num-1),d)      
         colorTransferFunction.AddRGBPoint(window*i/(num-1), d[0],d[1],d[2])
-  
-  
-  
+
   @staticmethod      
   def adjustOpacityPowerFunction(gradientOpacityFunction, window, pow, points):
 
@@ -607,7 +367,7 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
     pow = float(pow)
     points = float(points)
           
-    if (gradientOpacityFunction != None) & (window > 0):
+    if (gradientOpacityFunction is not None) & (window > 0):
       
       gradientOpacityFunction.RemoveAllPoints()
       
@@ -620,14 +380,12 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
               
       gradientOpacityFunction.AddPoint(window,1.,0.5,0.)
             
-  
   @staticmethod
   def RGBtoHex(r,g,b, satMod = 1.0):
     
     col = qt.QColor(r,g,b)
     sat = col.saturation() * satMod
     col.setHsv(col.hue(),sat,col.value())
-    
     return col.name()
 
   @staticmethod
@@ -644,79 +402,25 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
           slicer.mrmlScene.RemoveNode(model)
           
       slicer.mrmlScene.RemoveNode(modelHierarchyNode)       
-      
-        
-  
+
   @staticmethod
-  def hideReport(reportNode):
-    if not reportNode:
-      return
-    
-    for i in xrange(reportNode.GetNumberOfStudyNodeIDs()):
-      study = reportNode.GetStudy(i)
-      
-      if not study:
-        continue
-      
-      vrdn = study.GetVolumeRenderingDisplayNode()
-      
-      if vrdn:
-        vrdn.SetVisibility(0)
-        
-    for i in xrange(reportNode.GetNumberOfFindingNodeIDs()):
-      finding = reportNode.GetFinding(i)
-      
-      if not finding:
-        continue
-      
-      finding.SetHideFromEditors(True)
-      
-      roi = finding.GetSegmentationROINode()  
-      if roi:
-        roi.SetDisplayVisibility(0)      
-      
-      for j in xrange(reportNode.GetNumberOfStudyNodeIDs()):
-        study = reportNode.GetStudy(j)
-      
-        if not study:
-          continue    
-
-        seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
-
-        if not seg:
-          continue
-        
-        mhNode = seg.GetModelHierarchyNode()
-        if mhNode:
-          mNode = mhNode.GetModelNode()
-          if mNode:
-            mNode.SetDisplayVisibility(0)
-        
-    
-  @staticmethod  
   def setSetting(settingStr, value):
     settingStr = "LongitudinalPETCT/"+settingStr 
     qt.QSettings().setValue(settingStr,str(value))
               
   @staticmethod
   def getSetting(settingStr):
-    
-    set = None
     setting = qt.QSettings().value('LongitudinalPETCT/'+settingStr)
     
     if setting:
       try:
-        set = float(setting)
-        return set
-    
+        return float(setting)
       except ValueError:
-        set = setting  
-         
-        if (set == 'true'):
+        if setting == 'true':
          return True
-        
-        elif (set == 'false'):
+        elif setting == 'false':
           return False
+    return None
     
   @staticmethod
   def dateFromDICOM(dateStr):
@@ -724,15 +428,12 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
       y = int(dateStr[:4])
       m = int(dateStr[4:6])
       d = int(dateStr[6:8])
-      
       return datetime.date(y,m,d)
     
-        
   @staticmethod
   def insertStr(original, new, pos):
-    '''Inserts new inside original at pos.'''
+    """Inserts new inside original at pos."""
     return original[:pos] + new + original[pos:]     
-
 
   @staticmethod
   def getROITranslationFromTransform(roi):
@@ -744,8 +445,7 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
         matrix = trans.GetMatrixTransformToParent()
         if matrix:
          pos = [matrix.GetElement(0,3),matrix.GetElement(1,3),matrix.GetElement(2,3)] 
-    
-    return pos          
+    return pos
 
   @staticmethod
   def resetThreeDViewsFocalPoints(resetFirst = False):
@@ -758,9 +458,6 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
         
         threeDViews[i].resetFocalPoint()
         threeDViews[i].lookFromViewAxis(ctk.ctkAxesWidget.Anterior)
-
-          
-          
 
   @staticmethod
   def createBusyProgressBarDialog(text):
@@ -781,18 +478,18 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
        
     vbl.addWidget(lbl)
     vbl.addWidget(pb)
-      
     return dialog
  
   @staticmethod  
   def getSegmentationColorChangeMessageBox():    
-    qt.QMessageBox.information(None, SlicerLongitudinalPETCTModuleViewHelper.moduleDialogTitle(),"Please note that only segmentations with the same color label as the current Finding's color will be used for segmentation!") 
+    qt.QMessageBox.information(None, SlicerLongitudinalPETCTModuleViewHelper.moduleDialogTitle(),
+                               "Please note that only segmentations with the same color label as the current Finding's "
+                               "color will be used for segmentation!")
 
- 
   @staticmethod    
   def makeModels(study, finding, colorTable):
 
-    if (study == None) | (finding == None) | (colorTable == None):
+    if (study is None) | (finding is None) | (colorTable is None):
       return    
      
     seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
@@ -804,15 +501,10 @@ class SlicerLongitudinalPETCTModuleViewHelper( object ):
       tempMH = slicer.vtkMRMLModelHierarchyNode()
       slicer.mrmlScene.AddNode(tempMH)
       
-      if (labelVolume != None) & (tempMH != None):
-        parameters = {}
-        parameters['InputVolume'] = labelVolume.GetID()
-        parameters['ColorTable'] = colorTable.GetID()
-        parameters['ModelSceneFile'] = tempMH.GetID()
-        parameters['GenerateAll'] = False
-        parameters['StartLabel'] = finding.GetColorID()
-        parameters['EndLabel'] = finding.GetColorID()
-        parameters['Name'] = labelVolume.GetName() + "_" + finding.GetName()+"_M"
+      if (labelVolume is not None) & (tempMH is not None):
+        parameters = {'InputVolume': labelVolume.GetID(), 'ColorTable': colorTable.GetID(),
+                      'ModelSceneFile': tempMH.GetID(), 'GenerateAll': False, 'StartLabel': finding.GetColorID(),
+                      'EndLabel': finding.GetColorID(), 'Name': labelVolume.GetName() + "_" + finding.GetName() + "_M"}
 
         cliModelMaker = None
         cliModelMaker = slicer.cli.run(slicer.modules.modelmaker, cliModelMaker, parameters, wait_for_completion = True)  

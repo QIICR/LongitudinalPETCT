@@ -1,11 +1,11 @@
-from __main__ import vtk, qt, ctk, slicer
+import vtk
+import qt
+import ctk
+import slicer
 
-from Editor import EditorWidget
 from LabelStatistics import LabelStatisticsLogic
 from SlicerLongitudinalPETCTModuleViewHelper import SlicerLongitudinalPETCTModuleViewHelper as ViewHelper
 from SlicerLongitudinalPETCTModuleSegmentationHelper import SlicerLongitudinalPETCTModuleSegmentationHelper as SegmentationHelper
-
-import sys as SYS
 
 
 #
@@ -34,7 +34,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if study:
       vrdn = study.GetVolumeRenderingDisplayNode()
       if vrdn:
-        return vrdn.GetROINode();
+        return vrdn.GetROINode()
 
   def getActiveFinding(self):
     if self.activeReportNode:
@@ -73,7 +73,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     return self.studyWidget
 
-
   def __createFindingWidget(self):
 
     if not self.findingWidget:
@@ -87,7 +86,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.findingWidget.connect('roiVisibilityChanged(bool)', self.onROIVisibility)
       self.findingWidget.connect('placeROIChecked(bool)', self.onPlaceROI)
       self.findingWidget.connect('addSegmentationToFinding()', self.onAddSegmentationToFinding)
-
 
     return self.findingWidget
 
@@ -103,7 +101,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
       self.editorWidget.editLabelMapsFrame.setText("Edit Segmentation")
       self.editorWidget.editLabelMapsFrame.connect('contentsCollapsed(bool)', self.onEditorCollapsed)
-
 
       # add a way to initialize from a prior segmentation
       if not self.priorSegComboBox:
@@ -146,7 +143,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     return self.analysisWidget
 
-
   def __createModuleSettingsWidget(self):
     if not self.moduleSettingsWidget:
       self.moduleSettingsWidget = slicer.qMRMLLongitudinalPETCTModuleSettingsWidget()
@@ -165,19 +161,19 @@ class qSlicerLongitudinalPETCTModuleWidget:
         self.moduleSettingsWidget.setProperty("ctWindowLevelButton",0)
 
       volumeRendering = ViewHelper.getSetting("volumeRendering")
-      if volumeRendering != None:
+      if volumeRendering is not None:
         self.moduleSettingsWidget.setProperty("volumeRendering",volumeRendering)
       else:
         self.moduleSettingsWidget.setProperty("volumeRendering",True)
 
       spinning = ViewHelper.getSetting("spinning")
-      if spinning != None:
+      if spinning is not None:
         self.moduleSettingsWidget.setProperty("spinning",spinning)
       else:
         self.moduleSettingsWidget.setProperty("spinning",True)
 
       opacityPow = ViewHelper.getSetting("opacityPow")
-      if opacityPow != None:
+      if opacityPow is not None:
         self.moduleSettingsWidget.setProperty("petOpacityPow",opacityPow)
       else:
         self.moduleSettingsWidget.setProperty("petOpacityPow",2.0)
@@ -185,25 +181,25 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.moduleSettingsWidget.connect("outlineSegmentationsToggled(bool)",self.onOutlineSegmentations)
 
       outlineSeg = ViewHelper.getSetting("outlineSegmentations")
-      if outlineSeg != None:
+      if outlineSeg is not None:
         self.moduleSettingsWidget.setProperty("outlineSegmentations",outlineSeg)
       else:
         self.moduleSettingsWidget.setProperty("outlineSegmentations",True)
 
       makeModels = ViewHelper.getSetting("makeModels")
-      if makeModels != None:
+      if makeModels is not None:
         self.moduleSettingsWidget.setProperty("makeModels",makeModels)
       else:
         self.moduleSettingsWidget.setProperty("makeModels",True)
 
       registration = ViewHelper.getSetting("registration")
-      if registration != None:
+      if registration is not None:
         self.moduleSettingsWidget.setProperty("registration",registration)
       else:
         self.moduleSettingsWidget.setProperty("registration",True)
 
       quantificationCLI = ViewHelper.getSetting("quantificationCLIModule")
-      if quantificationCLI == None:
+      if quantificationCLI is None:
         ViewHelper.setSetting("quantificationCLIModule", "petsuvimagemaker")
 
       self.moduleSettingsWidget.connect('petColorChanged(QString)', self.onPETColorChanged)
@@ -223,7 +219,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
   def onInitFromPriorPushButtonPushed(self):
     # get the prior segmentation label map volume from the combo box
     priorSegmentationNode = self.priorSegComboBox.currentNode()
-    if priorSegmentationNode == None:
+    if priorSegmentationNode is None:
       ViewHelper.Info('No label map selected')
       return
     priorSegmentationID = priorSegmentationNode.GetID()
@@ -233,12 +229,12 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     ViewHelper.Info('onInitFromPriorPushButtonPushed: prior node id = ' + priorSegmentationID)
 
-    if self.activeReportNode == None:
+    if self.activeReportNode is None:
       ViewHelper.Info('No active report!')
       return
 
     study = self.getActiveStudy()
-    if study == None:
+    if study is None:
       ViewHelper.Info('No active study!')
       return
 
@@ -246,13 +242,13 @@ class qSlicerLongitudinalPETCTModuleWidget:
     segmentationNode = None
     if self.activeReportNode.GetNumberOfFindingNodeIDs() > 0:
       finding = self.activeReportNode.GetActiveFindingNode()
-    if finding == None:
+    if finding is None:
       ViewHelper.Info('No finding node found for this report!')
       return
 
     segmentationNode = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
 
-    if segmentationNode != None and segmentationNode.GetLabelVolumeNodeID() == priorSegmentationID:
+    if segmentationNode is not None and segmentationNode.GetLabelVolumeNodeID() == priorSegmentationID:
       ViewHelper.showInformationMessageBox('Initialize from Prior', 'Cannot initialize from the same label node!')
       return
 
@@ -261,9 +257,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
     # Can init from a prior label map if no segmentation node has been
     # defined yet, or it has but it doesn't already point to the prior
     # label map
-    if (segmentationNode == None or
-        segmentationNode.GetLabelVolumeNodeID() == None or
-        (segmentationNode.GetLabelVolumeNodeID() != None and segmentationNode.GetLabelVolumeNodeID() != priorSegmentationID)):
+    if (segmentationNode is None or
+        segmentationNode.GetLabelVolumeNodeID() is None or
+        (segmentationNode.GetLabelVolumeNodeID() is not None and
+             segmentationNode.GetLabelVolumeNodeID() != priorSegmentationID)):
       # unset the mrml scene to reduce confusion from temp vols and slow updates
       self.priorSegComboBox.setMRMLScene(None)
 
@@ -290,8 +287,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
       threshold.ReleaseDataFlagOn()
       thresholdedPriorNode.SetAndObserveImageData(threshold.GetOutputDataObject(0))
       # put the prior into the PET label volume so that it will be in
-      # the pipeine for segmentation
-      if (study.GetPETLabelVolumeNode().GetImageData() != None):
+      # the pipeline for segmentation
+      if study.GetPETLabelVolumeNode().GetImageData() is not None:
         # check that the geometry matches
         geometryCheckString = volumesLogic.CheckForLabelVolumeValidity(study.GetPETLabelVolumeNode(), thresholdedPriorNode)
         if geometryCheckString != "":
@@ -314,7 +311,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       ViewHelper.showInformationMessageBox('Initializing done', 'Finished initializing from prior segmentation')
 
   def __createTempCroppedVolume(self):
-    if self.__tempCroppedVol == None:
+    if self.__tempCroppedVol is None:
       self.__tempCroppedVol = slicer.mrmlScene.AddNode(slicer.vtkMRMLScalarVolumeNode())
       self.__tempCroppedVol.SetName("LongitudinalPETCT_CroppedVolume")
       self.__tempCroppedVol.SetHideFromEditors(False)
@@ -323,14 +320,13 @@ class qSlicerLongitudinalPETCTModuleWidget:
     return self.__tempCroppedVol
 
   def __createTempLabelVolume(self):
-    if self.__tempLabelVol == None:
+    if self.__tempLabelVol is None:
       self.__tempLabelVol = slicer.mrmlScene.AddNode(slicer.vtkMRMLScalarVolumeNode())
       self.__tempLabelVol.SetName("LongitudinalPETCT_CroppedLabelVolume")
       self.__tempLabelVol.SetHideFromEditors(False)
       self.__tempLabelVol.SetSaveWithScene(False)
 
     return self.__tempLabelVol
-
 
   def __isEditorMode(self):
     return not self.editorWidget.editLabelMapsFrame.property('collapsed')
@@ -364,9 +360,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
         self.__layoutBackup = None
 
-
   def getUnsupportedVolumeRenderingMessageBox(self):
-    if self.__unsupportedVolRendMessageBox == None:
+    if self.__unsupportedVolRendMessageBox is None:
       self.__unsupportedVolRendMessageBox = ctk.ctkMessageBox()
       self.__unsupportedVolRendMessageBox.setModal(True)
       self.__unsupportedVolRendMessageBox.setIcon(qt.QMessageBox.Information)
@@ -452,7 +447,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
     # Add vertical spacer
     vbox.addStretch()
 
-
     self.reportOverviewWidget = None
     self.__createReportOverviewWidget()
 
@@ -495,26 +489,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.__layoutBackup = None
     self.__switchingReports = False #workaround flag for SetHideFromEditor() issue with FindingNodes
 
-  def updateComboBox(self, term = ""):
-
-    cb.clear()
-
-    d = [0.,0.,0.,0.]
-
-    for i in xrange(cn.GetNumberOfColors()):
-
-      isColor = cn.GetColor(i,d)
-
-      if (isColor == False) | ((d[0] == 0.) & (d[1] == 0.) & (d[2] == 0.)) | ( (len(term) > 0) & (term in cn.GetColorName(i) == False)):
-        continue
-
-      pxmp = qt.QPixmap(16,16)
-      pxmp.fill(qt.QColor(d[0],d[1],d[2],d[3]))
-      icn = qt.QIcon(pxmp)
-
-      cb.addItem(icn, cn.GetColorName(i))
-
-
   def onActiveReportNodeChanged(self, reportNode):
 
     self.__switchingReports = True
@@ -532,7 +506,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.findingWidget.setReportNode(reportNode)
     self.analysisWidget.setReportNode(reportNode)
     self.reportOverviewWidget.setReportNode(reportNode)
-
 
     actStudy = self.getActiveStudy()
     if actStudy:
@@ -552,10 +525,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     self.manageCollapsibleButtonsAvailability()
 
-
   def __createVolumeRenderingDisplayNode(self, petVolume, opacityPow):
 
-    vrDisplayNode = None
     vrLogic = slicer.modules.volumerendering.logic()
 
     vrDisplayNode = vrLogic.CreateVolumeRenderingDisplayNode()
@@ -584,12 +555,11 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     return vrDisplayNode
 
-
   def onActiveStudyNodeChanged(self, studyNode):
 
     if studyNode:
       self.activeReportNode.SetActiveStudyNodeID(studyNode.GetID())
-      self.__updateSegmentationROIAssginment()
+      self.__updateSegmentationROIAssignment()
     else:
       self.activeReportNode.SetActiveStudyNodeID(None)
 
@@ -604,13 +574,12 @@ class qSlicerLongitudinalPETCTModuleWidget:
     findings = False
     analysis = False
 
-
     notInEditorMode = self.editorWidget.editLabelMapsFrame.property('collapsed')
 
     if notInEditorMode:
       reports = True
 
-    if (self.activeReportNode != None) & notInEditorMode:
+    if (self.activeReportNode is not None) & notInEditorMode:
       studies = True
 
       if self.activeReportNode.GetNumberOfSelectedStudies() > 0:
@@ -628,7 +597,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.findingsCollapsibleButton.setProperty('enabled',findings | (notInEditorMode == False))
     self.analysisCollapsibleButton.setProperty('enabled',analysis)
 
-
   def manageLayout(self):
     lm = slicer.app.layoutManager()
     if lm:
@@ -640,25 +608,21 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     self.__hideVolumeRenderingDisplayNodes()
 
-
-    if (self.activeReportNode != None) & (self.moduleSettingsWidget.property('volumeRendering') == True):
+    if (self.activeReportNode is not None) & (self.moduleSettingsWidget.property('volumeRendering') == True):
 
       if self.__isStandardViewActive():
 
         study = self.getActiveStudy()
         if study:
           vrdn = study.GetVolumeRenderingDisplayNode()
-          petDisplayNode = study.GetPETVolumeNode().GetScalarVolumeDisplayNode()
           if vrdn:
             vrdn.AddViewNodeID(ViewHelper.getStandardViewNode().GetID())
             vrdn.SetVisibility(True)
             self.__updateOpacityPow(vrdn)
             self.__updateColorFunction(vrdn)
 
-
       else:
         # Analysis View
-
         compareViewNodes = ViewHelper.getCompareViewNodes()
         for i in range(self.activeReportNode.GetNumberOfSelectedStudies()):
           study = self.activeReportNode.GetSelectedStudy(i)
@@ -671,7 +635,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
                 vrdn.SetVisibility(True)
 
     self.onVRSpinning(self.moduleSettingsWidget.property("spinning"))
-
 
   def manageImageVolumesVisualization(self, fit = True):
 
@@ -696,7 +659,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     self.__hideSegmentationROINodes()
 
-    if showCurrent & (self.getActiveStudy() != None): # if the Study exists, a Report must exists too
+    if showCurrent & (self.getActiveStudy() is not None): # if the Study exists, a Report must exists too
       finding = self.activeReportNode.GetActiveFindingNode()
 
       if finding:
@@ -730,10 +693,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
                 else:
                   mn.SetDisplayVisibility(False)
 
-
     if self.__isQualitativeViewActive() | self.__isQuantitativeViewActive():
       self.__manageModelVisibilityCompareViewNodeIDs()
-
 
   def __manageModelVisibilityCompareViewNodeIDs(self):
 
@@ -761,8 +722,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
                   if (id >= 0) & (id < len(compareViewNodes)):
                     mdn.AddViewNodeID(compareViewNodes[id].GetID())
 
-
-
   def __registerStudy(self, fixedStudy, movingStudy):
 
     if not movingStudy.GetRegistrationTransformNode():
@@ -773,18 +732,13 @@ class qSlicerLongitudinalPETCTModuleWidget:
       movingStudy.GetRegistrationTransformNode().GetMatrixTransformToParent().Identity()
 
     else:
-      parameters = {}
+      parameters = {"fixedVolume": fixedStudy.GetPETVolumeNodeID(), "movingVolume": movingStudy.GetPETVolumeNodeID(),
+                    "linearTransform": movingStudy.GetRegistrationTransformNodeID(), "useRigid": True,
+                    "numberOfIterations": 1000, "initializeTransformMode": "useMomentsAlign"}
       #baseline
-      parameters["fixedVolume"] = fixedStudy.GetPETVolumeNodeID()
       # current for registration
-      parameters["movingVolume"] = movingStudy.GetPETVolumeNodeID()
       # transformation
-      parameters["linearTransform"] = movingStudy.GetRegistrationTransformNodeID()
       # default settings
-      parameters["useRigid"] = True
-      parameters["numberOfIterations"] = 1000
-      parameters["initializeTransformMode"] = "useMomentsAlign"
-
 
       dialog = ViewHelper.createBusyProgressBarDialog("Registering "+movingStudy.GetPETVolumeNode().GetName()+" with " + fixedStudy.GetPETVolumeNode().GetName() )
       dialog.show()
@@ -793,7 +747,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
       dialog.done(0)
 
     movingStudy.GetRegistrationTransformNode().SetName(movingStudy.GetPETVolumeNode().GetName()+"_RegistrationTransform")
-
 
   def onStudySelectedForSegmentation(self, studyNode, selected):
 
@@ -810,7 +763,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
       self.__initializeStudyVisualization(studyNode)
 
-      if self.moduleSettingsWidget.property("registration") == True:
+      if self.moduleSettingsWidget.property("registration"):
         if not self.activeReportNode.GetRegistrationFixedStudyNode():
           self.activeReportNode.SetRegistrationFixedStudyNodeID(studyNode.GetID())
 
@@ -818,7 +771,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
       # if study was selected the new index is the column of this study
       newidx = self.activeReportNode.GetIndexOfSelectedStudy(studyNode)
-
 
     else:
       trans =  studyNode.GetRegistrationTransformNode()
@@ -844,7 +796,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     self.reportOverviewWidget.selectStudyColumn(newidx)
 
-
   def __initializeStudyVisualization(self, studyNode):
 
     if studyNode:
@@ -867,7 +818,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
         vrdNode = self.__createVolumeRenderingDisplayNode(studyNode.GetPETVolumeNode(), self.moduleSettingsWidget.property('opacityPow'))
         studyNode.SetAndObserveVolumeRenderingDisplayNodeID(vrdNode.GetID())
         ViewHelper.resetThreeDViewsFocalPoints(True)
-
 
   def onVRVisibility(self, visible):
 
@@ -895,12 +845,11 @@ class qSlicerLongitudinalPETCTModuleWidget:
     slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeYellow").SetUseLabelOutline(outline)
     slicer.mrmlScene.GetNodeByID("vtkMRMLSliceNodeGreen").SetUseLabelOutline(outline)
 
-    if(self.__isStandardViewActive() == False):
+    if not self.__isStandardViewActive():
       for i in xrange(self.activeReportNode.GetNumberOfSelectedStudiesSelectedForAnalysis()):
         compSliceNodes = ViewHelper.getCompareSliceNodes(i)
         for sn in compSliceNodes:
           sn.SetUseLabelOutline(outline)
-
 
   def __switchReportFindingNodes(self, oldReport, activeReport):
 
@@ -911,8 +860,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
       for i in xrange(oldReport.GetNumberOfFindingNodeIDs()):
         finding = oldReport.GetFinding(i)
         if finding:
-          for i in xrange(oldReport.GetNumberOfStudyNodeIDs()):
-            study = oldReport.GetStudy(i)
+          for j in xrange(oldReport.GetNumberOfStudyNodeIDs()):
+            study = oldReport.GetStudy(j)
             seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
             if not seg:
               continue
@@ -978,7 +927,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
       ViewHelper.spinStandardViewNode(spin)
       ViewHelper.spinCompareViewNodes(spin)
 
-
   def onVROpacity(self, pow):
 
     if self.activeReportNode:
@@ -999,7 +947,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
       if self.__isStandardViewActive():
         self.__updateOpacityPow(currStudyVRDN)
 
-
   def __updateColorFunction(self, vrdn):
 
     propNode = vrdn.GetVolumePropertyNode()
@@ -1010,7 +957,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
   def __updateOpacityPow(self, vrdn):
 
-    pow = None
     try:
       pow = float(vrdn.GetAttribute("OpacityPow"))
     except:
@@ -1018,11 +964,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     volNode = vrdn.GetVolumeNode()
     propNode = vrdn.GetVolumePropertyNode()
-    volNodeDisplNode = volNode.GetScalarVolumeDisplayNode()
-    window = volNodeDisplNode.GetWindow()
+    volDisplNode = volNode.GetScalarVolumeDisplayNode()
+    window = volDisplNode.GetWindow()
 
     ViewHelper.adjustOpacityPowerFunction(propNode.GetScalarOpacity(),window,pow,10.)
-
 
   def onROIVisibility(self):
     self.manageROIsVisualization()
@@ -1049,17 +994,15 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     self.manageCollapsibleButtonsAvailability()
 
-
-  def __updateSegmentationROIAssginment(self):
+  def __updateSegmentationROIAssignment(self):
     study = self.getActiveStudy()
     finding = self.getActiveFinding()
 
     self.__removeObservers(self.__segROIsObserverTags)
     del self.__segROIsObserverTags[:]
 
-    if (finding == None) | (study == None):
+    if (finding is None) | (study is None):
       return
-
 
     seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
     roi = self.getActiveSegmentationROI()
@@ -1067,7 +1010,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if finding.GetSegmentationROISpecified():
       c = [0.,0.,0.]
       r = [0.,0.,0.]
-
 
       if seg:
         seg.GetROIxyz(c)
@@ -1098,7 +1040,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     finding = self.getActiveFinding()
     study = self.getActiveStudy()
 
-    if (study != None) & (finding != None):
+    if (study is not None) & (finding is not None):
       c = [0.,0.,0.]
       r = [0.,0.,0.]
 
@@ -1118,22 +1060,20 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if self.__isEditorMode():
       self.__prepareVolumesForSegmentation(roi, event)
 
-
   def onFindingNodeSelected(self, finding):
     self.reportOverviewWidget.selectFindingRow(self.activeReportNode.GetIndexOfFindingNodeID(finding.GetID()))
 
   def onActiveFindingNodeChanged(self, finding):
     self.activeReportNode.SetActiveFindingNodeID(finding.GetID())
 
-    self.__updateSegmentationROIAssginment()
+    self.__updateSegmentationROIAssignment()
 
     self.manageModelsVisibility()
     self.manageCollapsibleButtonsAvailability()
 
-
   def onFindingNodeToBeRemoved(self, finding):
 
-    if self.__switchingReports == True:
+    if self.__switchingReports:
       return
 
 
@@ -1193,21 +1133,19 @@ class qSlicerLongitudinalPETCTModuleWidget:
           sw.unsetCursor()
           self.__removeROICenterPosition(sw)
 
-
   def __removeObservers(self, observeeTagList):
     # remove observers and reset
 
     for observee,tag in observeeTagList:
       observee.RemoveObserver(tag)
 
-
-  def __processROIPlacingEvent(self,interactor,event):
+  def __processROIPlacingEvent(self, interactor, event):
 
     sliceWidget = self.__interactorsAndSliceWidgets[interactor]
 
     if sliceWidget:
       xy = interactor.GetEventPosition()
-      xyz = sliceWidget.sliceView().convertDeviceToXYZ(xy);
+      xyz = sliceWidget.sliceView().convertDeviceToXYZ(xy)
       ras = sliceWidget.sliceView().convertXYZToRAS(xyz)
 
       if len(self.__roiPlacingPositionAndRadius) < 2:
@@ -1261,7 +1199,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
               self.findingWidget.setProperty("placeROIChecked",False)
 
-
   def __displayROICenterPosition(self, sliceWidget, xyPos):
 
     sv = sliceWidget.sliceView()
@@ -1274,7 +1211,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
     gs.SetScale(8)
     gs.SetCenter(xyPos[0],xyPos[1],0)
     gs.Update()
-
 
     if not sliceWidget in self.__sliceWidgetsMappersAndActors.keys():
       mpr = vtk.vtkPolyDataMapper2D()
@@ -1294,7 +1230,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     sv.scheduleRender()
 
-
   def __removeROICenterPosition(self, sliceWidget):
 
     sv = sliceWidget.sliceView()
@@ -1304,7 +1239,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
       actor = self.__sliceWidgetsMappersAndActors[sliceWidget][1]
       renderer.RemoveActor2D(actor)
       sv.scheduleRender()
-
 
   def onPETColorChanged(self, proceduralPETColorTableName):
 
@@ -1320,7 +1254,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
           vrdn = study.GetVolumeRenderingDisplayNode()
 
-          if (vrdn != None) & (study == self.getActiveStudy()):
+          if (vrdn is not None) & (study == self.getActiveStudy()):
             self.__updateColorFunction(vrdn)
 
     if self.__tempCroppedVol:
@@ -1340,20 +1274,17 @@ class qSlicerLongitudinalPETCTModuleWidget:
             ctDisplayNode.SetWindow(window)
             ctDisplayNode.SetLevel(level)
 
-
   def onChangeModuleSettingBool(self, setting, value):
 
-    if value == True:
+    if value:
       value = "true"
     else:
       value= "false"
 
     ViewHelper.setSetting(setting,value)
 
-
   def onChangeModuleSettingValue(self, setting, value):
     ViewHelper.setSetting(setting,value)
-
 
   def onEditorCollapsed(self, collapsed):
 
@@ -1365,7 +1296,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.findingWidget.hideAddButton(False)
 
     self.manageCollapsibleButtonsAvailability()
-
 
   def __exitSegmentationMode(self, manageImageVisualization = True):
 
@@ -1389,9 +1319,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.reportOverviewWidget.setProperty('enabled',True)
     self.findingWidget.setProperty('selectionEnabled',True)
 
-
-
-
   def __enterSegmentationMode(self):
 
     study = self.getActiveStudy()
@@ -1399,7 +1326,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     self.editorWidget.toolsColor.colorSpin.connect('valueChanged(int)',self.__onShowEditorColorWarning)
 
-    if (study == None) | (finding == None):
+    if (study is None) | (finding is None):
       return
 
     self.reportsCollapsibleButton.setProperty('enabled',False)
@@ -1410,7 +1337,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.__prepareVolumesForSegmentation(self, slicer.vtkMRMLAnnotationROINode.ValueModifiedEvent)
 
     seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
-    if seg != None:
+    if seg is not None:
       SegmentationHelper.pasteFromMainToCroppedLabelVolume(seg.GetLabelVolumeNode(), self.__tempLabelVol, finding.GetColorID())
 
 
@@ -1422,20 +1349,18 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     self.editorWidget.enter()
 
-
-
-  def __prepareVolumesForSegmentation(self,caller,event):
+  def __prepareVolumesForSegmentation(self, caller, event):
 
     study = self.getActiveStudy()
     finding = self.getActiveFinding()
 
-    if (study==None) | (finding == None):
+    if (study is None) | (finding is None):
       return
 
-    if self.__tempCroppedVol == None:
+    if self.__tempCroppedVol is None:
       self.__createTempCroppedVolume()
 
-    if self.__tempLabelVol == None:
+    if self.__tempLabelVol is None:
       self.__createTempLabelVolume()
 
     self.__tempLabelVol.Copy(study.GetPETLabelVolumeNode())
@@ -1454,8 +1379,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
     self.__tempCroppedVol.SetAndObserveTransformNodeID(None)
     self.__tempLabelVol.SetAndObserveTransformNodeID(None)
 
-
-
     self.getActiveSegmentationROI().SetAndObserveTransformNodeID(None)
 
     fitView = caller == self
@@ -1471,14 +1394,13 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     self.__tempLabelVol.GetDisplayNode().SetAndObserveColorNodeID(self.activeReportNode.GetColorTableNodeID())
 
-
   def onAddSegmentationToFinding(self):
 
     study = self.getActiveStudy()
     finding = self.getActiveFinding()
     roi = self.getActiveSegmentationROI()
 
-    if (study==None) | (finding == None) | (roi == None):
+    if (study is None) | (finding is None) | (roi is None):
       return
 
     pasted = False
@@ -1491,7 +1413,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
       seg.SetReferenceCount(seg.GetReferenceCount()-1)
       slicer.mrmlScene.AddNode(seg)
 
-      if self.moduleSettingsWidget.property("makeModels") == True:
+      if self.moduleSettingsWidget.property("makeModels"):
         mh = slicer.mrmlScene.AddNode(slicer.vtkMRMLModelHierarchyNode())
         seg.SetAndObserveModelHierarchyNodeID(mh.GetID())
 
@@ -1523,10 +1445,9 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if not SegmentationHelper.containsSegmentation(seg.GetLabelVolumeNode(),finding.GetColorID()):
       self.__removeSegmentationFromFinding(finding, study, seg)
 
-
     vrdn = study.GetVolumeRenderingDisplayNode()
 
-    if ((self.moduleSettingsWidget.property("makeModels") == True) & (vrdn.GetClassName() != 'vtkMRMLNCIRayCastVolumeRenderingDisplayNode')):
+    if (self.moduleSettingsWidget.property("makeModels") == True) & (vrdn.GetClassName() != 'vtkMRMLNCIRayCastVolumeRenderingDisplayNode'):
       ViewHelper.makeModels(study,finding,self.activeReportNode.GetColorTableNode())
 
     elif ViewHelper.getSetting('Models'):
@@ -1540,9 +1461,7 @@ class qSlicerLongitudinalPETCTModuleWidget:
     roiXYZ = ViewHelper.getROIPositionInRAS(self.getActiveSegmentationROI())
     ViewHelper.setSliceNodesCrossingPositionRAS(roiXYZ)
 
-
     self.manageCollapsibleButtonsAvailability()
-
 
   def __removeSegmentationFromFinding(self, finding, study, seg):
 
@@ -1558,10 +1477,9 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     slicer.mrmlScene.RemoveNode(seg)
 
-
   def calculateSUVsAndStatistics(self, study, finding):
 
-    if (study == None) | (finding == None):
+    if (study is None) | (finding is None):
       return
 
     stats = LabelStatisticsLogic(study.GetPETVolumeNode(), study.GetPETLabelVolumeNode())
@@ -1569,14 +1487,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
     if finding.GetColorID() in stats.labelStats["Labels"]:
       idx = stats.labelStats["Labels"].index(finding.GetColorID())
       idx = stats.labelStats["Labels"][idx]
-      values = {}
-      values["suvmax"] = stats.labelStats[idx,"Max"]
-      values["suvmean"] = stats.labelStats[idx,"Mean"]
-      values["suvmin"] = stats.labelStats[idx, "Min"]
-      values["volcc"] = stats.labelStats[idx, "Volume cc"]
-      values["volmm3"] = stats.labelStats[idx, "Volume mm^3"]
-      values["count"] = stats.labelStats[idx, "Count"]
-      values["stddev"] = stats.labelStats[idx, "StdDev"]
+      values = {"suvmax": stats.labelStats[idx, "Max"], "suvmean": stats.labelStats[idx, "Mean"],
+                "suvmin": stats.labelStats[idx, "Min"], "volcc": stats.labelStats[idx, "Volume cc"],
+                "volmm3": stats.labelStats[idx, "Volume mm^3"], "count": stats.labelStats[idx, "Count"],
+                "stddev": stats.labelStats[idx, "StdDev"]}
 
       seg = finding.GetSegmentationMappedByStudyNodeID(study.GetID())
       if seg:
@@ -1584,7 +1498,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     else:
       qt.QMessageBox.warning(None, SlicerLongitudinalPETCTModuleViewHelper.moduleDialogTitle(),'An error occured during the computation of the SUV values for the segmentation!')
-
 
   def onShowQualitativeView(self, show = True):
 
@@ -1624,7 +1537,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     return self.__chartArrayNodeNames
 
-
   def __updateChartArrayNodes(self):
 
     diff = len(self.__chartArrayNodeNames) * self.activeReportNode.GetNumberOfFindingNodeIDs() - len(self.__chartArrayNodes)
@@ -1649,11 +1561,9 @@ class qSlicerLongitudinalPETCTModuleWidget:
         self.__chartArrayNodes.append(arrayNode)
         self.__chartNode.AddArray(arrayNode.GetName(), arrayNode.GetID())
 
-
-
   def __updateQuantitativeAnalysisCharts(self):
 
-    if self.__chartNode == None:
+    if self.__chartNode is None:
       self.__createChartNode()
 
 
@@ -1675,12 +1585,12 @@ class qSlicerLongitudinalPETCTModuleWidget:
       study = self.activeReportNode.GetSelectedStudySelectedForAnalysis(i)
 
       if i > 0:
-        oldstudy =  self.activeReportNode.GetSelectedStudySelectedForAnalysis(i-1)
+        oldStudy =  self.activeReportNode.GetSelectedStudySelectedForAnalysis(i-1)
 
-        if (study != None) & (oldstudy != None):
+        if (study is not None) & (oldStudy is not None):
           date = ViewHelper.dateFromDICOM(study.GetAttribute('DICOM.StudyDate'))
-          olddate = ViewHelper.dateFromDICOM(oldstudy.GetAttribute('DICOM.StudyDate'))
-          days += (date-olddate).days
+          oldDate = ViewHelper.dateFromDICOM(oldStudy.GetAttribute('DICOM.StudyDate'))
+          days += (date-oldDate).days
 
       for j in xrange(self.activeReportNode.GetNumberOfFindingNodeIDs()):
 
@@ -1700,12 +1610,8 @@ class qSlicerLongitudinalPETCTModuleWidget:
           colorStr = ViewHelper.RGBtoHex(rgba[0]*255,rgba[1]*255,rgba[2]*255)
           self.__chartNode.SetProperty(can.GetName(), 'color', colorStr)
 
-
         if seg:
-          stats = []
-          stats.append(seg.GetSUVMax())
-          stats.append(seg.GetSUVMean())
-          stats.append(seg.GetSUVMin())
+          stats = [seg.GetSUVMax(), seg.GetSUVMean(), seg.GetSUVMin()]
 
           for l in xrange(len(arrays)):
             a = arrays[l]
@@ -1728,12 +1634,9 @@ class qSlicerLongitudinalPETCTModuleWidget:
     except:
       pass
 
-
-
   def onShowQuantitativeView(self, show = True):
 
     if show:
-
       self.reportOverviewWidget.setAllSelectableOn()
 
       currentLayoutID = ViewHelper.updateQuantitativeViewLayout(self.activeReportNode.GetNumberOfSelectedStudiesSelectedForAnalysis())
@@ -1748,7 +1651,6 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
       self.__hideSegmentationROINodes()
 
-
   def onStudySelectedForAnalysis(self, studyNode, selected):
 
     studyNode.SetSelectedForAnalysis(selected)
@@ -1759,21 +1661,16 @@ class qSlicerLongitudinalPETCTModuleWidget:
     elif self.__isQuantitativeViewActive():
       self.onShowQuantitativeView()
 
-
-
-
   def __createChartNode(self):
-    if self.__chartNode == None:
+    if self.__chartNode is None:
       self.__chartNode = slicer.mrmlScene.AddNode(slicer.vtkMRMLChartNode())
       self.__chartNode.SetSaveWithScene(False)
       self.__chartNode.SetProperty('default', 'yAxisLabel', 'SUVbw')
-      self.__chartNode.SetProperty('default', 'type', 'Scatter');
+      self.__chartNode.SetProperty('default', 'type', 'Scatter')
       self.__chartNode.SetProperty('default', 'showLegend', 'on')
       self.__chartNode.SetProperty('default', 'title', 'Longitudinal PET/CT Analysis')
       self.__chartNode.SetProperty('default', 'xAxisLabel', 'days')
-
     return self.__chartNode
-
 
   def onSaveResultsCSV(self):
     if not self.__fileDialog:
@@ -1785,12 +1682,10 @@ class qSlicerLongitudinalPETCTModuleWidget:
       self.__fileDialog.connect("fileSelected(QString)", self.__onFileSelected)
     self.__fileDialog.show()
 
-
   def __onFileSelected(self,fileName):
     fp = open(fileName, "w")
     fp.write(self.__resultsAsCSV())
     fp.close()
-
 
   def __resultsAsCSV(self):
     """
@@ -1849,26 +1744,24 @@ class qSlicerLongitudinalPETCTModuleWidget:
 
     return csv
 
-
   def onQuantificationModuleChanged(self, name):
 
     module = None
     try:
-      module = getattr(slicer.modules,name)
+      module = getattr(slicer.modules, name)
     except:
       try:
         name = name.lower()
-        module = getattr(slicer.modules,name)
+        module = getattr(slicer.modules, name)
       except:
         qt.QMessageBox.warning(None,"CLI module not found","The entered module is not available. Restoring the previous setting.")
 
     if module:
-      ViewHelper.setSetting("quantificationCLIModule",name)
-
+      ViewHelper.setSetting("quantificationCLIModule", name)
 
   def __onShowEditorColorWarning(self):
-    activeFinidng = self.getActiveFinding()
-    if activeFinidng:
+    activeFinding = self.getActiveFinding()
+    if activeFinding:
       selectedLabelValue = self.editorWidget.toolsColor.colorSpin.property('value')
-      if (selectedLabelValue > 0) & ( selectedLabelValue != activeFinidng.GetColorID() ):
+      if (selectedLabelValue > 0) & ( selectedLabelValue != activeFinding.GetColorID() ):
         ViewHelper.getSegmentationColorChangeMessageBox()
