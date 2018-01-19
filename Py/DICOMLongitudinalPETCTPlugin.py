@@ -1,13 +1,8 @@
 import os
-import sys as SYS
-from __main__ import vtk, qt, ctk, slicer
+import qt
+import slicer
 from DICOMLib import DICOMPlugin
 from DICOMLib import DICOMLoadable
-
-
-import DICOMLib
-
-import math as math
 
 #
 # This is the plugin to handle translation of diffusion volumes
@@ -20,7 +15,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
   """
 
   def __init__(self):
-    super(DICOMLongitudinalPETCTPluginClass,self).__init__()
+    super(DICOMLongitudinalPETCTPluginClass, self).__init__()
     self.loadType = "Longitudinal PET/CT Analysis"
     self.tags['patientID'] = "0010,0020"
     self.tags['patientName'] = "0010,0010"
@@ -67,19 +62,16 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     self.petTerm = "PT"
 
     self.scalarVolumePlugin = slicer.modules.dicomPlugins['DICOMScalarVolumePlugin']()
-  
-  
-  def __getDirectoryOfImageSeries(self, sopInstanceUID):
-    file = slicer.dicomDatabase.fileForInstance(sopInstanceUID)
-    return os.path.dirname(file)  
 
-  def __getSeriesInformation(self,seriesFiles,dicomTag):
+  def __getDirectoryOfImageSeries(self, sopInstanceUID):
+    f = slicer.dicomDatabase.fileForInstance(sopInstanceUID)
+    return os.path.dirname(f)
+
+  def __getSeriesInformation(self, seriesFiles, dicomTag):
     if seriesFiles:
       return  slicer.dicomDatabase.fileValue(seriesFiles[0],dicomTag)          
 
-
-
-  def __scanForValidPETCTStudies(self,fileLists):
+  def __scanForValidPETCTStudies(self, fileLists):
     
     petStudies = set()
     ctStudies = set()
@@ -103,7 +95,6 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     
     
     return petCtStudies
-          
 
   def examine(self,fileLists):
     """ Returns a list of DICOMLoadable instances
@@ -112,7 +103,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     """
     petCtStudies = self.__scanForValidPETCTStudies(fileLists)
     
-    mainLoadable = DICOMLib.DICOMLoadable()
+    mainLoadable = DICOMLoadable()
     mainLoadable.tooltip = "PET/CT Studies for Longitudinal PET/CT Report"
     
     studyplrlsing = "Studies" if len(petCtStudies) != 1 else "Study" 
@@ -140,17 +131,17 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
         
         for ldbl in loadables:
           if ldbl.selected:
-            type = ""  
+            imageType = ""
             if petSeries:
               petImageSeries += 1
-              type = "PT"
+              imageType = "PT"
             elif ctSeries:
               ctImageSeries += 1
-              type = "CT"
+              imageType = "CT"
             
             mainLoadable.files += ldbl.files
             
-            ldbl.name = type +"_"+self.__getSeriesInformation(ldbl.files, self.tags['studyDate'])+"_"+self.__getSeriesInformation(ldbl.files, self.tags['seriesTime'])
+            ldbl.name = imageType +"_"+self.__getSeriesInformation(ldbl.files, self.tags['studyDate'])+"_"+self.__getSeriesInformation(ldbl.files, self.tags['seriesTime'])
             self.cacheLoadables(ldbl.files, [ldbl])   
             if ldbl.warning:
               mainLoadable.warning += ldbl.warning +" "
@@ -165,26 +156,21 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
              
     return loadables
 
-                
-
-           
-
-  def __seperateFilesListIntoImageSeries(self, files):
+  def __separateFilesListIntoImageSeries(self, files):
     
     imageSeries = {}
     
-    for file in files:
-      seriesUID = self.__getSeriesInformation([file], self.tags['seriesInstanceUID'])
+    for f in files:
+      seriesUID = self.__getSeriesInformation([f], self.tags['seriesInstanceUID'])
       
-      if (seriesUID in imageSeries) == False:
+      if not (seriesUID in imageSeries):
         imageSeries[seriesUID] = [] 
             
-      imageSeries[seriesUID].append(file)  
+      imageSeries[seriesUID].append(f)
       
     return imageSeries
 
-
-  def __seperateImageSeriesAndFilesIntoStudies(self, imageSeriesAndFiles):
+  def __separateImageSeriesAndFilesIntoStudies(self, imageSeriesAndFiles):
     
     studies = {}
     
@@ -195,15 +181,13 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       
       studyUID = self.__getSeriesInformation(imageSeriesAndFiles[seriesUID], self.tags['studyInstanceUID'])   
       
-      if (studyUID in studies) == False:
+      if not (studyUID in studies):
         studies[studyUID] = []
       
       studies[studyUID].append(seriesUID)
-    
-      
+
     return studies
-    
-    
+
   def __extractSpecificModalitySeriesForStudies(self, studiesAndImageSeries, imageSeriesAndFiles, modality):
     
     seriesForStudies = {}
@@ -225,8 +209,7 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
             seriesForStudies[studyUID].append(seriesUID)      
 
     return seriesForStudies         
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
-  
+
   def __getImageSeriesDescription(self,files):
     
     rows = self.__getSeriesInformation(files, self.tags['rows'])
@@ -249,11 +232,10 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
     seriesDescription = self.__getSeriesInformation(files, self.tags['seriesDescription'])
     return seriesDescription + " Series Time: "+seriesTime+ " | Width: "+str(width)+"mm | Height: "+str(height)+"mm | Slices: "+str(slices)
 
-  
   def load(self,loadable):
     
-    imageSeriesAndFiles = self.__seperateFilesListIntoImageSeries(loadable.files) 
-    studiesAndImageSeries = self.__seperateImageSeriesAndFilesIntoStudies(imageSeriesAndFiles)
+    imageSeriesAndFiles = self.__separateFilesListIntoImageSeries(loadable.files)
+    studiesAndImageSeries = self.__separateImageSeriesAndFilesIntoStudies(imageSeriesAndFiles)
     
     petImageSeriesInStudies = self.__extractSpecificModalitySeriesForStudies(studiesAndImageSeries, imageSeriesAndFiles, self.petTerm)
     ctImageSeriesInStudies = self.__extractSpecificModalitySeriesForStudies(studiesAndImageSeries, imageSeriesAndFiles, self.ctTerm)
@@ -290,16 +272,16 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
         matchingReports.append(i)
    
     if matchingReports:
-      selectables = []
+      selectables = list()
       selectables.append("Create new PET/CT Report")
-      for id in matchingReports:
-        rn = reportNodes.GetItemAsObject(id)
-        selectables.append("Import into "+ rn.GetName() + " --- Number of available studies: "+str(rn.GetNumberOfStudyNodeIDs()) )             
+      for reportId in matchingReports:
+        rn = reportNodes.GetItemAsObject(reportId)
+        selectables.append("Import into "+ rn.GetName() + " --- Number of available studies: "+str(rn.GetNumberOfStudyNodeIDs()) )
       dialogTitle = "Import PET/CT Studies into existing Report"
       dialogLabel = "One or more Reports for the selected Patient already exist!"
-      selected = qt.QInputDialog.getItem(None,dialogTitle,dialogLabel,selectables,0,False)  
+      selected = qt.QInputDialog.getItem(None,dialogTitle,dialogLabel,selectables,0,False)
     
-      if (selected in selectables) & (selected != selectables[0]):   
+      if (selected in selectables) & (selected != selectables[0]):
         reportNode = reportNodes.GetItemAsObject(selectables.index(selected)-1)
     
     # create new Report node    
@@ -366,20 +348,16 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
       petVolumeNode = self.scalarVolumePlugin.load(self.getCachedLoadables(imageSeriesAndFiles[petImageSeriesUID])[0])
       petDir = self.__getDirectoryOfImageSeries(self.__getSeriesInformation(imageSeriesAndFiles[petImageSeriesUID], self.tags['sopInstanceUID']))
       
-      parameters = {}
-      parameters["PETVolume"] = petVolumeNode.GetID()
-      parameters["PETDICOMPath"] = petDir
-      parameters["SUVVolume"] = petVolumeNode.GetID()
+      parameters = {"PETVolume": petVolumeNode.GetID(), "PETDICOMPath": petDir, "SUVVolume": petVolumeNode.GetID()}
 
-      
       quantificationCLI = qt.QSettings().value('LongitudinalPETCT/quantificationCLIModule')
       
-      if quantificationCLI == None:
+      if quantificationCLI is None:
         quantificationCLI = "petsuvimagemaker"
        
-       
+
       cliNode = None
-      cliNode = slicer.cli.run(getattr(slicer.modules, quantificationCLI), cliNode, parameters) 
+      cliNode = slicer.cli.run(getattr(slicer.modules, quantificationCLI), cliNode, parameters)
       
       # create PET label volume node
       volLogic = slicer.modules.volumes.logic()
@@ -423,8 +401,13 @@ class DICOMLongitudinalPETCTPluginClass(DICOMPlugin):
 
 class PETCTSeriesSelectorDialog(object):
   
-  def __init__(self, parent=None, studyDescription="",petDescriptions=[],ctDescriptions=[],petSelection=0,ctSelection=0):
+  def __init__(self, parent=None, studyDescription="", petDescriptions=None, ctDescriptions=None, petSelection=0,
+               ctSelection=0):
     
+    if ctDescriptions is None:
+      ctDescriptions = []
+    if petDescriptions is None:
+      petDescriptions = []
     self.studyDescription = studyDescription
     self.petDescriptions = petDescriptions
     self.ctDescriptions = ctDescriptions  
@@ -443,9 +426,8 @@ class PETCTSeriesSelectorDialog(object):
       self.parent = parent
       self.layout = parent.layout() 
       
-  
   def setup(self):
-      
+
     self.studyLabel = qt.QLabel(self.studyDescription)
     self.studyLabel.setAlignment(qt.Qt.AlignCenter)
     self.petLabel = qt.QLabel("PET Image Series")
@@ -468,17 +450,11 @@ class PETCTSeriesSelectorDialog(object):
     self.layout.addWidget(self.button,3,0,1,2)
     
     self.button.connect('clicked()',self.parent.close)    
-      
 
   def getSelectedSeries(self):
     return [self.petList.currentRow, self.ctList.currentRow]              
-          
-          
-  
-#
-# DICOMLongitudinalPETCTPlugin
-#
 
+  
 class DICOMLongitudinalPETCTPlugin:
   """
   This class is the 'hook' for slicer to detect and recognize the plugin
@@ -511,9 +487,6 @@ class DICOMLongitudinalPETCTPlugin:
       slicer.modules.dicomPlugins = {}
     slicer.modules.dicomPlugins['DICOMLongitudinalPETCTPlugin'] = DICOMLongitudinalPETCTPluginClass
 
-#
-# DICOMPetCtStudyWidget
-#
 
 class DICOMPetCtStudyWidget:
   def __init__(self, parent = None):
